@@ -1,0 +1,2163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QAYYIM QUEST: RISE OF THE BOIS!</title>
+    <style>
+        /* =========================================
+           CSS VARIABLES & GLOBAL STYLES
+           ========================================= */
+        :root {
+            --gold: #ffd700;
+            --bg: #1a1a1a;
+            --card-bg: #2a2a2a;
+            --text: #ffffff;
+            --hp-color: #ff4d4d;
+            --mp-color: #4d94ff;
+            --exp-color: #ba55d3;
+        }
+
+        body { background-color: var(--bg); color: var(--text); font-family: 'Segoe UI', sans-serif; margin: 0; overflow: hidden; }
+
+        /* =========================================
+           SCREEN & LAYOUT CONTAINERS
+           ========================================= */
+        .screen { display: none; width: 100vw; height: 100vh; flex-direction: column; align-items: center; justify-content: center; background-size: cover; background-position: center; }
+        .active { display: flex; }
+
+        .hero-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; padding: 20px; max-height: 80vh; overflow-y: auto; }
+        .hero-selection-img {
+            width: 80px;      /* Adjust size as needed */
+            height: 80px;     /* Keep width and height equal for a square/circle */
+            object-fit: cover; /* This prevents the image from stretching */
+            border-radius: 8px; /* Optional: rounds the corners */
+            display: block;
+            margin: 0 auto;   /* Centers the image */
+            background: #444; /* Optional: placeholder color while image loads */
+        }
+        .hero-option {
+            position: relative; /* Allows the name to sit at the bottom */
+            width: 120px;
+            height: 120px;
+            background: var(--card-bg);
+            border: 2px solid var(--gold); /* The sharp yellow border */
+            cursor: pointer;
+            overflow: hidden;
+            transition: transform 0.2s;
+        }
+
+        .hero-option:hover {
+            transform: scale(1.05);
+            border-color: white;
+        }
+
+        .hero-name-label {
+            position: absolute;
+            bottom: 0;
+            width: 100%;
+            background: rgba(0, 0, 0, 0.7); /* Dark semi-transparent bar */
+            color: white;
+            font-size: 12px;
+            padding: 5px 0;
+            text-align: center;
+            text-transform: uppercase;
+            font-weight: bold;
+        }
+
+        /* UI Modals & Popups */
+        .modal { display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(30, 30, 30, 0.98); border: 3px solid var(--gold); padding: 20px; z-index: 1000; width: 420px; text-align: center; max-height: 90vh; overflow-y: auto; }
+        .menu-item { background: var(--card-bg); padding: 15px; border: 1px solid #444; cursor: pointer; margin-bottom: 5px; text-align: center; }
+        .menu-item:hover { border-color: var(--gold); }
+        .menu-item:disabled { opacity: 0.5; cursor: not-allowed; border-color: #222; }
+        
+        .ability-preview-box { display: flex; flex-direction: column; gap: 8px; margin-top: 10px; font-size: 11px; }
+        .ab-box { border: 1px solid #555; padding: 10px; background: #222; display: flex; align-items: center; text-align: left; gap: 10px; }
+        .pop-hero-img { width: 100px; height: 120px; background: #444; border: 2px solid #fff; margin: 10px auto; }
+
+        /* HUD & Navigation Bars */
+        .top-bar { position: absolute; top: 0; width: 100%; background: rgba(0,0,0,0.8); display: flex; justify-content: space-around; padding: 10px 0; border-bottom: 2px solid var(--gold); z-index: 100; }
+        .bottom-bar { position: absolute; bottom: 0; width: 100%; background: rgba(0,0,0,0.9); display: flex; justify-content: center; gap: 10px; padding: 15px 0; border-top: 2px solid var(--gold); z-index: 100; }
+
+        /* Combat Visuals */
+        #combat-view { display: none; width: 90%; justify-content: space-between; align-items: center; }
+        .avatar { width: 150px; height: 200px; background: #444; border: 2px solid #fff; }
+        .enemy-avatar { border-color: var(--hp-color); }
+        
+        .hp-bar-container { width: 100%; height: 10px; background: #333; margin-bottom: 5px; border: 1px solid #000; }
+        .hp-fill { height: 100%; background: var(--hp-color); transition: width 0.3s; }
+        .stat-val { color: var(--gold); font-weight: bold; }
+        .nav-btn { padding: 10px 15px; cursor: pointer; background: #333; color: white; border: 1px solid var(--gold); }
+        .nav-btn:disabled { opacity: 0.3; border-color: #555; cursor: not-allowed; }
+
+        #combat-log { background: rgba(0,0,0,0.8); padding: 10px; border: 1px solid var(--gold); width: 220px; height: 80px; font-size: 12px; overflow-y: auto; }
+        
+        .claim-btn { display:none; margin: 10px auto; color:black; font-weight:bold; padding:5px 15px; border: none; cursor: pointer; }
+
+        /* GYM Specific */
+        #lift-btn { display: none; width: 150px; height: 150px; border-radius: 50%; background: var(--gold); color: black; font-weight: bold; font-size: 24px; border: 5px solid white; cursor: pointer; margin: 20px auto; }
+        #gym-timer { font-size: 20px; color: var(--hp-color); font-weight: bold; }
+
+        /* School Quiz Styles */
+        .quiz-option { background: #333; padding: 10px; margin: 5px; border: 1px solid #555; cursor: pointer; }
+        .quiz-option:hover { background: #444; border-color: var(--gold); }
+
+        @keyframes blink {
+            0% { opacity: 1; }
+            50% { opacity: 0; }
+            100% { opacity: 1; }
+        }
+
+        #travel-screen {
+            background-color: #000; /* Dark background for the loading screen */
+            display: none; /* Controlled by the .active class */
+        }
+
+        #travel-screen.active {
+            display: flex;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="selection-screen" class="screen active">
+        <div style="text-align: center; margin-bottom: 30px;">
+            <h1 style="font-size: 3.5rem; color: var(--gold); text-shadow: 3px 3px #000; margin: 0; letter-spacing: 2px;">
+                QAYYIM QUEST: RISE OF THE BOIS
+            </h1>
+            <h2 style="font-size: 1.5rem; color: #aaa; margin-top: 5px; text-transform: uppercase; letter-spacing: 4px;">
+                Select Your Hero
+            </h2>
+        </div>
+        <div class="hero-grid" id="hero-grid"></div>
+    </div>
+
+    <div id="popup" class="modal">
+        <h2 id="pop-name">Hero</h2>
+        <div class="pop-hero-img" id="pop-img"></div>
+        <p id="pop-desc" style="font-size: 14px; color: #bbb; padding: 0 10px;"></p>
+        <div id="pop-abilities" class="ability-preview-box"></div>
+        <button onclick="closePopup()" style="margin-top:15px; padding: 8px 20px;">Close</button>
+    </div>
+
+    <div id="sub-menu" class="modal">
+        <h2 id="menu-title">Menu</h2>
+        <p id="menu-desc">Select an option</p>
+        <div id="menu-content"></div>
+        <div id="gym-ui" style="display:none;">
+            <p id="gym-stats"></p>
+            <div id="gym-timer"></div>
+            <button id="lift-btn" onclick="registerLift()">LIFT</button>
+        </div>
+        <div id="quiz-ui" style="display:none;">
+            <p id="quiz-question" style="font-weight:bold; margin-bottom:15px;"></p>
+            <div id="quiz-options"></div>
+        </div>
+        <button id="gold-claim-btn" class="claim-btn" style="background:var(--gold);" onclick="claimGold()">+10 GOLD</button>
+        <button id="exp-claim-btn" class="claim-btn" style="background:var(--exp-color); color: white;" onclick="claimExp()">+50 EXP</button>
+        <button id="rest-btn" class="claim-btn" style="background:var(--mp-color); color: white;" onclick="restAtHome()">REST (Heal HP/MP)</button>
+        <button onclick="closeSubMenu()" style="margin-top:10px;">Close</button>
+    </div>
+
+    <div id="travel-screen" class="screen">
+        <h1 id="travel-text" style="margin-bottom: 10px;">Traveling...</h1>
+        
+        <div id="loading-container" style="width: 400px; height: 30px; background: #000; border: 3px solid var(--gold); position: relative; overflow: hidden; margin: 20px 0;">
+            <div id="loading-fill" style="width: 0%; height: 100%; background: var(--gold); transition: width 0.2s ease-out;"></div>
+        </div>
+
+        <div id="press-start" style="display: none; color: var(--gold); font-weight: bold; font-size: 1.2rem; cursor: pointer; animation: blink 1s infinite; margin-top: 20px;">
+            — PRESS ANY KEY OR CLICK TO START —
+        </div>
+    </div>
+
+    <div id="game-screen" class="screen">
+        <div class="top-bar">
+            <div>NAME: <span id="ui-name" class="stat-val">?</span></div>
+            <div>HP: <span id="ui-hp" class="stat-val">?</span>/<span id="ui-maxhp">?</span></div>
+            <div>MP: <span id="ui-mp" class="stat-val">?</span>/<span id="ui-maxmp">?</span></div>
+            <div>LVL: <span id="ui-lvl" class="stat-val">1</span></div>
+            <div>EXP: <span id="ui-exp" class="stat-val">0</span>/<span id="ui-next-exp">50</span></div>
+            <div>GOLD: <span id="ui-gold" class="stat-val">0</span></div>
+        </div>
+
+        <div id="exploration-view" style="text-align:center;">
+            <div class="avatar" style="margin: 0 auto 20px; border-radius: 10px;"></div>
+            <h2 id="location-text">Home</h2>
+        </div>
+
+        <div id="combat-view">
+            <div class="unit"><p>PLAYER</p><div class="avatar"></div></div>
+            <div id="combat-log">Encounter Started!</div>
+            <div class="unit">
+                <p id="enemy-name-ui">ENEMY</p>
+                <div class="hp-bar-container"><div id="enemy-hp-fill" class="hp-fill" style="width: 100%;"></div></div>
+                <div class="avatar enemy-avatar"></div>
+            </div>
+        </div>
+
+        <div class="bottom-bar" id="standard-nav">
+            <button class="nav-btn" onclick="openExplore()">Explore</button>
+            <button class="nav-btn" onclick="openMap()">Map</button>
+            <button class="nav-btn" onclick="openItems()">Items</button>
+        </div>
+
+        <div class="bottom-bar" id="combat-nav" style="display:none;">
+            <button class="nav-btn" id="atk-1">Ability 1</button>
+            <button class="nav-btn" id="atk-2" disabled>Ability 2</button>
+            <button class="nav-btn" id="atk-3" disabled>Ability 3</button>
+            <button class="nav-btn" id="items-btn" onclick="openItems()">Items</button>
+            <button class="nav-btn" id="flee-btn" onclick="flee()">Flee</button>
+        </div>
+    </div>
+
+    <script>
+        /* =========================================
+           HERO DATABASE (13 HEROES)
+           ========================================= */
+        const heroData = {
+            "Jacob": {
+                description: "A Cob caster from Cornwalling. Utilizes cobs and maizes to pop off every foe he encounters.",
+                hp: 100, mp: 100,
+                abilities: [
+                    { id: 1, name: "Cobsicles", cost: 15, type: "dmg", val: [10, 20], desc: "Casts cobsicles and hurls them dealing 10-20 dmg. Cost: 15 MP" },
+                    { id: 2, name: "cluster cobs", cost: 30, type: "dmg", val: [25, 30], desc: "Throws a cob that pops into explosive popcorn dealing 25-30 dmg. Cost: 30 MP" },
+                    { id: 3, name: "Cornflakes", cost: 45, type: "debuff_dmg", val: [25, 25], debuff: 10, duration: [2], desc: "Rains down heavy corn flakes, lowering enemy dmg by 10 and dealing 25 dmg. Cost: 45 MP" }
+                ],
+                scaling: { 2: { mp: 15 }, 3: { hp: 10, ab2: true }, 4: { dmgBonus: 5 }, 5: { hp: 10, mp: 10, ab3: true } }
+            },
+            "Rah Jay": {
+                description: "A time manipulator sorcerer who was driven out of chronosphere trying to acquire peace in Melee Gun City. Specializes in halting the flow of time around him.",
+                hp: 100, mp: 105,
+                abilities: [
+                    { id: 1, name: "Chronostrike", cost: 15, type: "dmg", val: [15, 15], desc: "Stops time briefly to strike. Deals 15 dmg. Cost: 15 MP" },
+                    { id: 2, name: "Time frame", cost: 30, type: "dmg_stun", val: [25, 25], stun: [1], desc: "Attacks in a frame of time without being attacked. Deals 25 dmg. Cost: 30 MP" },
+                    { id: 3, name: "Time Stop", cost: 50, type: "stun_buff", stun: 3, mpReduce: 15, desc: "Stops time for 3 turns and reduces all MP costs by 5. Cost: 50 MP" }
+                ],
+                scaling: { 2: { mp: 10 }, 3: { hp: 5, ab2: true }, 4: { dmgBonus: 5 }, 5: { hp: 10, mp: 10, ab3: true } }
+            },
+            "Baurgona": {
+                description: "A famous gambling gunslinger of the Capital Region. Utilizes chances and luck in his favor.",
+                hp: 100, mp: 100,
+                abilities: [
+                    { id: 1, name: "Lucky Shot", cost: 20, type: "chance_dmg", val1: [15, 20], chance1: 0.7, val2: [20, 30], chance2: 0.3, desc: "70% for 15-20 dmg, 30% for 20-25 dmg. Cost: 20 MP" },
+                    { id: 2, name: "Hit or miss", cost: 25, type: "dmg_stun_chance", val: [15, 25], stunChance: 0.2, desc: "Deals 15-25 dmg with a 20% chance to end enemy turn. Cost: 25 MP" },
+                    { id: 3, name: "Gamble of death", cost: 0, type: "gamble_death", desc: "Instantly kills enemy or player based on enemy HP percentage. Cost: 0 MP" }
+                ],
+                scaling: { 2: { mp: 5 }, 3: { hp: 5, ab2: true }, 4: { dmgBonus: 10 }, 5: { hp: 10, mp: 10, ab3: true } }
+            },
+            "Zhadid": {
+                description: "An infamous rogue thief wanted dead or alive in the Capital Region. Utilizes invisibility for stealthy action.",
+                hp: 100, mp: 100,
+                abilities: [
+                    { id: 1, name: "Backstab", cost: 15, type: "dmg", val: [5, 30], desc: "Vanish and stab from behind. Deals 5-30 dmg. Cost: 15 MP" },
+                    { id: 2, name: "Swifty hands", cost: 30, type: "dmg_steal", val: [10, 20], gold: 5, stealChance: 0.2, desc: "Deals 10-20 and a chance to steals 5 gold. Cost: 30 MP" },
+                    { id: 3, name: "Bounty strike", cost: 50, type: "dmg_bounty", val: [15, 15], bonusGold: 5, desc: "Deals 15 dmg. If it kills, +5 bonus gold. Cost: 50 MP" }
+                ],
+                scaling: { 2: { mp: 5 }, 3: { hp: 10, ab2: true }, 4: { dmgBonus: 5 }, 5: { hp: 5, mp: 5, ab3: true } }
+            },
+            "Hymen": {
+                description: "A wise oracle with eidetic memory observed many history and knowledge of the world. Traces complex spells and ancient techniques.",
+                hp: 100, mp: 105,
+                abilities: [
+                    { id: 1, name: "Precise Strike", cost: 15, type: "dmg_dodge_chance", val: [10, 20], dodgeChance: 0.15, desc: "Deals 10-20 dmg with a 15% chance to dodge next attack. Cost: 15 MP" },
+                    { id: 2, name: "Elemental force", cost: 35, type: "dmg", val: [15, 35], desc: "Complex elemental magic dealing 15-30 dmg. Cost: 35 MP" },
+                    { id: 3, name: "Calming Technique", cost: 50, type: "free_mp_heal", heal: 25, duration: 2, desc: "Heals 25 HP and makes abilities cost 0 MP for 2 turns. Cost: 50 MP" }
+                ],
+                scaling: { 2: { mp: 10 }, 3: { hp: 5, ab2: true }, 4: { dmgBonus: 5 }, 5: { hp: 10, mp: 10, ab3: true } }
+            },
+            "Amlan": {
+                description: "A superhuman with enhanced senses escaped from Moor Ant Town's Research Facility. Utilizes improved strength and magic.",
+                hp: 100, mp: 100,
+                abilities: [
+                    { id: 1, name: "Powering Blow", cost: 10, type: "dmg_extra_chance", val: [15, 15], bonusVal: 5, chance: 0.1, desc: "Inflict a strong blow dealing 15 dmg. Cost: 10 MP" },
+                    { id: 2, name: "Enhancement", cost: 25, type: "buff_dmg_mp", val: 10, mpReduce: 5, duration: 2, desc: "Increases dmg by 10 and reduces MP costs by 5 for 2 turns. Cost: 35 MP" },
+                    { id: 3, name: "Super tackle", cost: 50, type: "dmg_stun_chance", val: [25, 25], stunChance: 0.3, desc: "Charges dealing 25 dmg with a 30% stun chance. Cost: 50 MP" }
+                ],
+                scaling: { 2: { mp: 15 }, 3: { hp: 15, ab2: true }, 4: { dmgBonus: 5 }, 5: { hp: 10, mp: 10, ab3: true } }
+            },
+            "Lil Nas": {
+                description: "A time manipulator sorcerer from Remain Master of Time Management. Hastens and slows nature around him.",
+                hp: 100, mp: 100,
+                abilities: [
+                    { id: 1, name: "Slowness", cost: 10, type: "dmg_debuff", val: [10, 15], debuff: 5, desc: "Deals 10-15 dmg and lowers enemy dmg by 5. Cost: 10 MP" },
+                    { id: 2, name: "Hastening", cost: 30, type: "crit_stun_chance", val: [15, 25], stunChance: 0.2, desc: "Critical strike 20-30 dmg and 20% stun chance. Cost: 30 MP" },
+                    { id: 3, name: "Time Stop", cost: 50, type: "stun_buff", stun: 3, mpReduce: 15, desc: "Stops time for 3 turns and reduces all MP costs by 5. Cost: 50 MP" }
+                ],
+                scaling: { 2: { mp: 10 }, 3: { hp: 5, ab2: true }, 4: { dmgBonus: 5 }, 5: { hp: 5, mp: 5, ab3: true } }
+            },
+            "Eren Doug": {
+                description: "An exiled time manipulator from Miligun. Moves between the flow of time.",
+                hp: 100, mp: 105,
+                abilities: [
+                    { id: 1, name: "Chronostrike", cost: 15, type: "dmg", val: [15, 15], desc: "Stops time briefly to strike. Deals 15 dmg. Cost: 15 MP" },
+                    { id: 2, name: "Back Track", cost: 35, type: "heal_dmg", heal: [10, 15], val: [20, 25], desc: "Heals 10-15 HP and deals 20-25 dmg. Cost: 35 MP" },
+                    { id: 3, name: "Future's Demise", cost: 65, type: "percent_dmg_stun", val: 0.40, stun: 1, desc: "Lowers enemy current HP by 40% and skips their turn. Cost: 65 MP" }
+                ],
+                scaling: { 2: { mp: 15 }, 3: { hp: 5, ab2: true }, 4: { dmgBonus: 5 }, 5: { hp: 5, mp: 5, ab3: true } }
+            },
+            "Akhil": {
+                description: "A Magic blood fighter seeking for the end of period cramps using his blood majestic physique. Utilizes blood manipulation.",
+                hp: 90, mp: 100,
+                abilities: [
+                    { id: 1, name: "Bloody fists", cost: 20, type: "self_dmg_attack", val: [20, 25], selfDmg: 5, desc: "Deals 20-25 dmg but takes away 5 HP from player. Cost: 20 MP" },
+                    { id: 2, name: "Life Steal", cost: 35, type: "lifesteal", val: [15, 20], heal: 25, desc: "Deals 15-20 dmg and heals player 25 HP. Cost: 35 MP" },
+                    { id: 3, name: "Period Cramps", cost: 50, type: "dmg_stun", val: [30, 30], stun: 1, desc: "Deals 30 dmg and skips enemy turn. Cost: 50 MP" }
+                ],
+                scaling: { 2: { mp: 15 }, 3: { hp: 10, ab2: true }, 4: { dmgBonus: 5 }, 5: { hp: 5, mp: 5, ab3: true } }
+            },
+            "Wassim": {
+                
+                description: "A time manipulator sorcerer who was defeated in his greatest battle and reborn into a legend. Uses time manipulation to correct his mistakes",
+                hp: 100, mp: 105,
+                abilities: [
+                    { id: 1, name: "Chronostrike", cost: 15, type: "dmg", val: [15, 15], desc: "Stops time briefly to strike. Deals 15 dmg. Cost: 15 MP" },
+                    { id: 2, name: "Back Track", cost: 35, type: "heal_dmg", heal: [10, 15], val: [15, 25], desc: "Heals 10-15 HP and deals 20-25 dmg. Cost: 35 MP" },
+                    { id: 3, name: "Future's Demise", cost: 65, type: "percent_dmg_stun", val: 0.40, stun: 1, desc: "Lowers enemy current HP by 40% and skips their turn. Cost: 65 MP" }
+                ],
+                scaling: { 2: { mp: 15 }, 3: { hp: 5, ab2: true }, 4: { dmgBonus: 5 }, 5: { hp: 10, mp: 5, ab3: true } }
+            },
+            "Basalt": {
+                description: "A merciless punisher of the Capital Region using chains of torment. Inflicts unbearable pain until death to bring out justice.",
+                hp: 100, mp: 100,
+                abilities: [
+                    { id: 1, name: "Burning Chains", cost: 15, type: "dmg", val: [10, 30], desc: "Hurls hot chains dealing 10-30 dmg. Cost: 15 MP" },
+                    { id: 2, name: "Chained fool", cost: 30, type: "dmg_debuff", val: [10, 20], debuff: 15, desc: "Deals 10-20 dmg and lowers enemy dmg by 15. Cost: 30 MP" },
+                    { id: 3, name: "Weakening Morals", cost: 50, type: "dmg_debuff_buff", val: [10, 25], debuff: 20, buff: 10, duration: 2, desc: "Deals 10-25 dmg, lowers enemy dmg by 20, increases player dmg by 10. Cost: 50 MP" }
+                ],
+                scaling: { 2: { mp: 10 }, 3: { hp: 10, ab2: true }, 4: { dmgBonus: 5 }, 5: { hp: 5, mp: 5, ab3: true } }
+            },
+            "G-man": {
+                description: "A high wise noble scholar of AKIC mastering the four fields of knowledge using it to write his own laws for his advantage",
+                hp: 100, mp: 100,
+                abilities: [
+                    { id: 1, name: "G-force", cost: 20, type: "dmg", val: [15, 25], desc: "Strong blasting force dealing 15-25 dmg. Cost: 20 MP" },
+                    { id: 2, name: "Abstract Reasoning", cost: 35, type: "dmg_stun", val: [15, 30], stun: 2, desc: "Confusion field deals 15 dmg and skips enemy turn. Cost: 35 MP" },
+                    { id: 3, name: "Imaginary Number Technique i", cost: 70, type: "dmg", val: [50, 50], desc: "Powerful blast dealing 50 dmg. Cost: 70 MP" }
+                ],
+                scaling: { 2: { mp: 15 }, 3: { hp: 5, ab2: true }, 4: { dmgBonus: 5 }, 5: { hp: 10, mp: 15, ab3: true } }
+            },
+            "Pow-pau": {
+                description: "A powerful sage using sacred spells from Beyond his Journey. Utilizes Zoltraak Magic to defeat any evil human or demon.",
+                hp: 100, mp: 100,
+                abilities: [
+                    { id: 1, name: "Dark and Light Zoltraak", cost: 15, type: "dmg", val: [10, 25], desc: "Beams of magic dealing 10-25 dmg. Cost: 15 MP" },
+                    { id: 2, name: "Magic Barrier", cost: 25, type: "block_debuff", val: 0, debuff: 10, duration: 3, desc: "Blocks next attack and reduces enemy dmg by 10 for 3 turns. Cost: 25 MP" },
+                    { id: 3, name: "Zoltraak", cost: 65, type: "dmg", val: [40, 80], desc: "Legendary killing magic dealing 40-80 dmg. Cost: 65 MP" }
+                ],
+                scaling: { 2: { mp: 10 }, 3: { mp: 10, ab2: true }, 4: { dmgBonus: 5 }, 5: { hp: 10, mp: 15, ab3: true } }
+            }
+        };
+
+        const schoolData = {
+            "Math": {
+                enrolled: false,
+                finished: false,
+                levels: [
+                    {
+                        name: "General Mathematics",
+                        questions: [
+                            { q: "What is the Domain of y=2x+1?", a: "any real number", options: ["any real number", "-2", "-1", "None"] },
+                            { q: "What is the inverse function of y=3x+1?", a: "x-1/3", options: ["y-1/3", "y-3/1", "x-1/3", "x-3/1"] },
+                            { q: "Transform x=log3(81) into its exponential form.", a: "81=3^x", options: ["x=3^81", "x=81^3", "3=81^x", "81=3^x"] }
+                        ]
+                    },
+                    {
+                        name: "Pre-Calculus",
+                        questions: [
+                            { q: "What is the General Form of a circle?", a: "x^2+y^2+Dx+Ey+F=0", options: ["x^2+y^2=r^2", "(x-h)^2+(y-k)^2=0", "x^2+y^2+Dx+Ey+F=0", "x^2+y^2-2hx-2ky=h^2+k^2+r^2"] },
+                            { q: "What is the focus of (x-2)^20/16+(y-3)^2/4", a: "3.46", options: ["2, 3", "-2, 3", "3.46", "-2, -3"] },
+                            { q: "A smooth, open geometric curve with two disjoint branches...", a: "Hyperbola", options: ["Ellipse", "Hyperbola", "Parabola", "Circle"] }
+                        ]
+                    },
+                    {
+                        name: "Calculus",
+                        questions: [
+                            { q: "Evaluate the limit of 2x+3 as x approaches 2.", a: "7", options: ["6", "7", "9", "11"] },
+                            { q: "What is the derivative of 5x^3", a: "15x^2", options: ["15x^2", "x=6", "15x^3", "x=7"] },
+                            { q: "Which is not a field of Calculus", a: "Constants", options: ["Limits", "Derivatives", "Integrals", "Constants"] }
+                        ]
+                    }
+                ]
+            },
+            "Science": {
+                enrolled: false,
+                finished: false,
+                levels: [
+                    {
+                        name: "Chemistry",
+                        questions: [
+                            { q: "What is blood categorized as?", a: "Heterogeneous Mixture", options: ["Heterogeneous Mixture", "Pure Substance", "Homogeneous Mixture", "Element"] },
+                            { q: "What type of compound is made up of metal and nonmetal?", a: "Ionic Compound", options: ["Atomic Compound", "Metallic Compound", "Covalent Compound", "Ionic Compound"] },
+                            { q: "Which is temperature-dependent?", a: "Molarity", options: ["Molarity", "Molality", "Parts Per Million", "Mole Fraction"] }
+                        ]
+                    },
+                    {
+                        name: "Biology",
+                        questions: [
+                            { q: "What is the most abundant Biomolecule in the world?", a: "Carbohydrates", options: ["Carbohydrates", "Proteins", "Nucleic acids", "Lipids"] },
+                            { q: "What is the largest organ of the body?", a: "Skin", options: ["Liver", "Large Intestine", "Skin", "Lungs"] },
+                            { q: "Homogenous white x homogenous black hair chance of black offspring?", a: "0%", options: ["75%", "50%", "100%", "0%"] }
+                        ]
+                    },
+                    {
+                        name: "Earth Science",
+                        questions: [
+                            { q: "Which planet is said to be Earth's twin?", a: "Venus", options: ["Mars", "Mercury", "Venus", "None of the above"] },
+                            { q: "What is the largest layer of the Earth?", a: "Mantle", options: ["Crust", "Mantle", "Core", "Atmosphere"] },
+                            { q: "Which wave is the most strongest?", a: "Surface waves", options: ["Surface waves", "Primary waves", "Secondary waves", "S-waves"] }
+                        ]
+                    }
+                ]
+            },
+            "Language/UCSP": {
+                enrolled: false,
+                finished: false,
+                levels: [
+                    {
+                        name: "Grammar",
+                        questions: [
+                            { q: "Plural form of sister-in-law", a: "sisters-in-law", options: ["sisters-in-laws", "sisters-in-laws", "sisters-in-law", "none of the above"] },
+                            { q: "What mood of verb is 'Answer this question'?", a: "Imperative", options: ["Indicative", "Imperative", "Subjective", "Infinitive"] },
+                            { q: "Which is an example of a coordinating conjunction?", a: "for", options: ["because", "for", "though", "whenever"] }
+                        ]
+                    },
+                    {
+                        name: "Literature",
+                        questions: [
+                            { q: "Which is an example of a folktale?", a: "John Henry", options: ["John Henry", "Darangen", "Epic of Gilgamesh", "The Raven"] },
+                            { q: "Which is not an example of sci-fi", a: "The Shining", options: ["Interstellar", "The Truman Show", "Dune", "The Shining"] },
+                            { q: "What kind of character stays the same throughout the story?", a: "static", options: ["flat", "dynamic", "round", "static"] }
+                        ]
+                    },
+                    {
+                        name: "UCSP",
+                        questions: [
+                            { q: "Who is the father of Sociology", a: "Auguste Comte", options: ["Jean Bodin", "Max Webber", "Auguste Comte", "Harriet Martinean"] },
+                            { q: "Which views other cultures to be recessive", a: "Ethnocentrism", options: ["Xenocentrism", "Cultural Relativism", "Ethnocentrism", "None of the above"] },
+                            { q: "What form of government does the US have?", a: "Democracy", options: ["Authoritarian", "Totalitarianism", "Democracy", "Monarchy"] }
+                        ]
+                    }
+                ]
+            }
+        };
+
+        const quests = {
+            q1: { id: "q1", name: "Rags to Riches", desc: "I require 5 rags attained from the peasants of the Alley Way Central.", rewardG: 15, rewardE: 25, req: 5, item: "Rags", status: "locked" },
+            q2: { id: "q2", name: "Battle for Bottles", desc: "I need 5 empty potion bottles for I am concocting brews of doom", rewardG: 25, rewardE: 50, req: 5, item: "Empty Potion Bottle", status: "locked" },
+            q3: { id: "q3", name: "Gold Digger", desc: "I need 100 g gold from the peasants. I will trade some more gold for them.", rewardG: 150, rewardE: 60, req: 100, item: "Peasant Gold", status: "locked" }
+        };
+
+        const mapLocations = {
+            "Home": "Your Humble Abode where you can rest. Replenishes HP and MP bars",
+            "Sir DIY's Tavern": "A place of variety and exotic materials. Quests and shops.",
+            "GYM": "Training grounds for aspiring brave warriors. increases HP and dmg.",
+            "AKIC": "Academy of Khan Integrated Corn. The school of mighty sorcerers and philosophers. Increases MP.",
+        };
+
+        const gymData = {
+            lifting: [
+                { lvl: 1, cost: 25, reward: 5, time: 10, clicks: 60, done: false },
+                { lvl: 2, cost: 50, reward: 10, time: 25, clicks: 120, done: false },
+                { lvl: 3, cost: 100, reward: 15, time: 60, clicks: 500, done: false }
+            ],
+            sparring: [
+                { lvl: 1, cost: 25, reward: 5, enemy: { name: "Elite", hp: 100, dmg: [10, 20] }, done: false },
+                { lvl: 2, cost: 50, reward: 10, enemy: { name: "Master", hp: 125, dmg: [10, 30] }, done: false },
+                { lvl: 3, cost: 100, reward: 15, enemy: { name: "Grand Master", hp: 200, dmg: [10, 50] }, done: false }
+            ]
+        };
+
+        const expRequirements = [0, 50, 100, 150, 250, 9999999];
+
+        /* =========================================
+           GLOBAL STATE
+           ========================================= */
+        let player = { 
+            name: "", hp: 100, maxHp: 100, mp: 100, maxMp: 100, 
+            gold: 0, exp: 0, lvl: 1, strBuff: 0, strTurns: 0, 
+            bonusDmg: 0, selectedHero: null,
+            gymLvlLift: 1, gymLvlSpar: 1,
+            dodgeNext: false, freeMPTurns: 0, enemyDmgDebuff: 0, enemyDebuffTurns: 0,
+            equippedAccessory: null
+        };
+        
+        let enemy = { name: "", hp: 0, maxHp: 0, dmg: [0,0], gold: 0, exp: 0 };
+        let inventory = {}; 
+        let isCombatActive = false;
+        let isPlayerTurn = true;
+        let clickTimer = null;
+        let stunTurns = 0;
+        let isSparring = false;
+        let currentSparReward = 0;
+        let currentSparIndex = 0;
+        let currentLocation;
+
+        let liftClicks = 0;
+        let liftTarget = 0;
+        let liftTimeLeft = 0;
+        let liftInterval = null;
+        let liftTimerStarted = false;
+
+        let currentField = "";
+        let currentQuizLvl = 0;
+        let currentQuestionIdx = 0;
+        
+        const sellPrices = {
+            "Old boot": 2,
+            "Bottle": 2,
+            "Dusty hat": 2,
+            "HP Potion": 4,
+            "MP Potion": 4,
+            "Strength Potion": 4,
+            "Scholarship discount": 0,
+            "Gym discount": 0,
+            "Emmel": 0,
+            "Rubik's Cube": 0,
+            "Zumba Video": 0,
+            "Baston": 0
+        };
+
+        const passiveItems = {
+            "Rubik's Cube": "Increases Max MP by 15.",
+            "Zumba Video": "Increases Max HP by 20",
+            "Baston": "Increases dmg by 15"
+        };
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const grid = document.getElementById('hero-grid');
+            const heroList = Object.keys(heroData);
+            
+           heroList.forEach(name => {
+                const btn = document.createElement('div');
+                btn.className = 'hero-option';
+                
+                // Set the image as a background
+                btn.style.backgroundImage = `url('images/${name}.png')`;
+                btn.style.backgroundSize = 'cover';
+                btn.style.backgroundPosition = 'center';
+
+                // Add the name text
+                const nameLabel = document.createElement('div');
+                nameLabel.className = 'hero-name-label';
+                nameLabel.innerText = name;
+
+                btn.appendChild(nameLabel);
+
+                btn.onclick = () => {
+                    if (clickTimer === null) {
+                        clickTimer = setTimeout(() => {
+                            showHeroPreview(name);
+                            clickTimer = null;
+                        }, 250);
+                    } else {
+                        clearTimeout(clickTimer);
+                        clickTimer = null;
+                        selectHero(name);
+                    }
+                };
+                grid.appendChild(btn);
+            });
+            setupCombatButtons();
+            quests.q1.status = "available";
+        });
+
+                // Listen for the Enter key globally
+        document.addEventListener('keydown', function(e) {
+            // Only trigger if the Enter key is pressed
+            let goldTapCount = 0;
+            let goldTapTimer;
+
+            // Central function to open the console
+            function openDevConsole() { 
+                const input = prompt("DEVELOPER CONSOLE: Enter command (e.g., !getItem Old boot 3)");
+                if (input !== null) {
+                    processCommand(input.trim());
+                }
+            }
+
+            // Mobile/Mouse: 7-Tap Trigger on the Gold Display
+            // This adds the listener to the Gold container in the UI
+            document.addEventListener('DOMContentLoaded', () => {
+                const goldDisplay = document.getElementById('ui-gold').parentElement;
+                goldDisplay.style.cursor = "pointer"; // Visual cue for PC users
+
+                goldDisplay.addEventListener('click', () => {
+                    goldTapCount++;
+                    clearTimeout(goldTapTimer);
+                    
+                    // Reset count if user stops tapping for 1.5 seconds
+                    goldTapTimer = setTimeout(() => { goldTapCount = 0; }, 1500);
+
+                    if (goldTapCount === 7) {
+                        goldTapCount = 0;
+                        openDevConsole();
+                    }
+                });
+            });
+
+            // PC: Tab Key Trigger
+            window.addEventListener('keydown', (e) => {
+                if (e.key === 'Tab') {
+                    e.preventDefault();
+                    openDevConsole();
+                }
+            });
+        });
+
+        /* =========================================
+           HERO PREVIEW & SELECTION
+           ========================================= */
+        function showHeroPreview(name) {
+            const data = heroData[name];
+            document.getElementById('pop-name').innerText = name;
+            const descEl = document.getElementById('pop-desc');
+            const abContainer = document.getElementById('pop-abilities');
+            const heroImg = document.getElementById('pop-img');
+            abContainer.innerHTML = "";
+
+            if(data) {
+                heroImg.style.display = "block";
+                
+                // --- ADD THESE LINES TO SET THE IMAGE ---
+                heroImg.style.backgroundImage = `url('images/${name}.png')`;
+                heroImg.style.backgroundSize = 'cover';
+                heroImg.style.backgroundPosition = 'center';
+                // ----------------------------------------
+
+                descEl.innerText = data.description;
+                data.abilities.forEach(ab => {
+                    abContainer.innerHTML += `<div class="ab-box"><div><strong>${ab.name}</strong><br><span style="color:#aaa">${ab.desc}</span></div></div>`;
+                });
+            } else {
+                heroImg.style.display = "none";
+                descEl.innerText = "Hero details coming soon!";
+            }
+            document.getElementById('popup').style.display = 'block';
+        }
+
+        function selectHero(name) {
+            const data = heroData[name];
+            player.selectedHero = data;
+            player.name = name;
+            player.hp = player.maxHp = data.hp;
+            player.mp = player.maxMp = data.mp;
+
+            // --- ADD THESE LINES TO SET YOUR IN-GAME AVATAR ---
+            const avatars = document.querySelectorAll('.avatar');
+            avatars.forEach(av => {
+                av.style.backgroundImage = `url('images/${name}.png')`;
+                av.style.backgroundSize = 'cover';
+                av.style.backgroundPosition = 'center';
+            });
+            // -------------------------------------------------
+
+            transitionToCutscene();
+        }
+
+        /* =========================================
+           GAMEPLAY LOGIC
+           ========================================= */
+
+        function triggerExplorationEvent() {
+            const roll = Math.random(); // Generates a number between 0 and 1
+            if (roll < 0.50) {
+                // 50% chance for Battle (0.00 to 0.49)
+                startFight();
+            } else if (roll < 0.60) {
+                // 10% chance for Item (0.50 to 0.59)
+                itemFind();
+            } else if (roll < 0.75) {
+                // 15% chance for Message (0.60 to 0.74)
+                messageEncounter();
+            } else if (roll < 0.90) {
+                // 15% chance for Special Message (0.75 to 0.89)
+                specialMessage();
+            } else {
+                // 10% chance for Nothing (0.90 to 1.00)
+                nothingEvent();
+            } 
+        }
+
+        function itemFind() {
+            const roll = Math.random();
+            let itemName = "";
+            let goldAmount = 0;
+
+            if (roll < 0.60) {
+                // --- TRASH ITEMS (60%) ---
+                const trash = ["Old boot", "Bottle", "Dusty hat"];
+                itemName = trash[Math.floor(Math.random() * trash.length)];
+                
+            } else if (roll < 0.70) {
+                // --- CONSUMABLES (10%) ---
+                const consumables = ["HP Potion", "MP Potion", "Strength Potion"];
+                itemName = consumables[Math.floor(Math.random() * consumables.length)];
+                
+            } else if (roll < 0.75) {
+                // --- SPECIAL ITEMS (5%) ---
+                const special = ["Scholarship discount", "Gym discount", "Emmel"];
+                itemName = special[Math.floor(Math.random() * special.length)];
+                
+            } else {
+                // --- GOLD (25%) ---
+                const goldRoll = Math.random();
+                if (goldRoll < 0.90) {
+                    // 90% chance for small gold
+                    const amounts = [5, 10, 15];
+                    goldAmount = amounts[Math.floor(Math.random() * amounts.length)];
+                } else {
+                    // 10% chance for big gold
+                    goldAmount = 50;
+                }
+            }
+
+            // --- GRANTING THE REWARD ---
+            if (goldAmount > 0) {
+                player.gold += goldAmount;
+                alert(`You found ${goldAmount} Gold lying on the ground!`);
+            } else if (itemName !== "") {
+                // Add to the same inventory object used by your Shop/Inventory
+                inventory[itemName] = (inventory[itemName] || 0) + 1;
+                alert(`You found an item: ${itemName}!`);
+            }
+
+            updateUI(); 
+        }
+
+        function messageEncounter() {
+            // Generate a random number between 1 and 3 to pick which message plays
+            const rand = Math.floor(Math.random() * 3) + 1;
+
+            switch (rand) {
+                case 1: // MSG1: Fallen Qayyim Bois (Yes/No Option)
+                    if (confirm("Oh my, are you not one of the Fallen Qayyim Bois?")) {
+                        alert("I knew it! It is an honor to meet you!");
+                    } else {
+                        alert("My apologies, I could have sworn you were one of them.");
+                    }
+                    break;
+
+                case 2: // MSG2: Bumping into someone (Prompt only)
+                    alert("Hey watch where you are goi... oh shi... I am so sorry please continue on...");
+                    break;
+
+                case 3: // MSG3: Guess the age (Text Input Prompt)
+                    let ageGuess = prompt("Hey mister, guess how old I am.");
+                    
+                    if (ageGuess === "6") {
+                        alert("SIX SEVEN! SIX SEVEN! SIX SEVEN! SIX SEVEN! SIX SEVEN! SIX SEVEN! SIX SEVEN! SIX SEVEN! SIX SEVEN!");
+                    } else if (ageGuess === "7") {
+                        alert("WOW, you got it right!");
+                    } else {
+                        // If they cancel the prompt or type anything else
+                        alert("Nope, I am 7 years old!");
+                    }
+                    break;
+            }
+        }
+
+        function specialMessage() {
+            const rand = Math.floor(Math.random() * 3) + 1;
+
+            switch (rand) {
+                case 1: // MSG1: The Mugging
+                    if (confirm("STICK IT UP SUCKER! You are getting mugged!\n\n[OK] to Surrender (Lose Gold)\n[Cancel] to Fight Back")) {
+                        // Option A: Surrender
+                        let lostGold = Math.floor(Math.random() * 21) + 10; // 10-30 gold
+                        player.gold = Math.max(0, player.gold - lostGold);
+                        alert(`You gave up your gold... lost ${lostGold}g.`);
+                        updateUI();
+                    } else {
+                        // Option B: Fight Back
+                        alert("You won't go down without a fight!");
+                        
+                        // 1. Set specific stats for the Thief 
+                        enemy.name = "Thief";
+                        enemy.maxHp = 100;
+                        enemy.hp = 100;
+                        enemy.dmg = [10, 20]; 
+                        enemy.gold = Math.floor(Math.random() * 21) + 10; 
+                        enemy.exp = 15; 
+
+                        // 2. Set the Name in the UI
+                        const nameUI = document.getElementById('enemy-name-ui');
+                        if (nameUI) nameUI.innerText = enemy.name.toUpperCase();
+
+                        // 3. Set the Enemy Image
+                        const enemyImg = document.querySelector('.enemy-avatar');
+                        if (enemyImg) {
+                            enemyImg.style.backgroundImage = "url('images/Thief.png')";
+                            enemyImg.style.backgroundSize = "cover";
+                            enemyImg.style.backgroundPosition = "center";
+                            enemyImg.style.display = "block"; // Force visibility
+                        }
+
+                        // 4. Update UI Elements & State
+                        isCombatActive = true;
+                        isSparring = false; 
+                        updateEnemyBar();
+                        updateUI(); 
+
+                        const log = document.getElementById('combat-log');
+                        if (log) {
+                            log.innerHTML = `<div style="color:red; font-weight:bold;">The Thief blocks your path! Prepare to fight!</div>`;
+                        }
+                        
+                        // 5. MANUAL SCREEN SWITCH
+                        document.getElementById('exploration-view').style.display = 'none';
+                        document.getElementById('standard-nav').style.display = 'none';
+                        
+                        document.getElementById('combat-view').style.display = 'flex';
+                        document.getElementById('combat-nav').style.display = 'flex';
+
+                        const itemsBtn = document.getElementById('items-btn');
+                        if (itemsBtn) itemsBtn.disabled = false;
+                        
+                        const fleeBtn = document.getElementById('flee-btn');
+                        if (fleeBtn) fleeBtn.innerText = "Flee";
+                    }
+                    break;
+
+                case 2: // MSG2: The Drifter
+                    if (confirm("Hello kind Sir, any spare change?\n\n[OK] Give 10-15g \n[Cancel] Refuse")) {
+                        let gift = Math.floor(Math.random() * 6) + 10; // 10-15
+                        if (player.gold >= gift) {
+                            player.gold -= gift;
+                            alert("Oh, bless you kind sir!");
+                            if (Math.random() < 0.25) { // 25% chance for EXP
+                                addExp(25);
+                                alert("You feel a sense of enlightenment. +25 EXP!");
+                            }
+                        } else {
+                            alert("You check your pockets... you don't even have enough gold to help.");
+                        }
+                        updateUI();
+                    } else {
+                        alert("You ignored the poor drifter.");
+                    }
+                    break;
+
+                case 3: // MSG3: Rock Paper Scissors
+                    if (confirm("Hello there sir, care for a little game of Rock Paper Scissors?\n\n[OK] Accept \n[Cancel] Decline")) {
+                        playRPS();
+                    } else {
+                        alert("You refused the stranger's game.");
+                    }
+                    break;
+            }
+        }
+
+        function playRPS() {
+            let playerWins = 0;
+            let npcWins = 0;
+            const choices = ["Rock", "Paper", "Scissors"];
+
+            while (playerWins < 2 && npcWins < 2) {
+                let input = prompt(`Score: You ${playerWins} - NPC ${npcWins}\nType: R for Rock, P for Paper, S for Scissors`).toUpperCase();
+                
+                let pChoice = "";
+                if (input === "R") pChoice = "Rock";
+                else if (input === "P") pChoice = "Paper";
+                else if (input === "S") pChoice = "Scissors";
+                else { alert("Invalid choice! Try again."); continue; }
+
+                let nChoice = choices[Math.floor(Math.random() * 3)];
+                let result = "";
+
+                if (pChoice === nChoice) result = "Tie!";
+                else if (
+                    (pChoice === "Rock" && nChoice === "Scissors") ||
+                    (pChoice === "Paper" && nChoice === "Rock") ||
+                    (pChoice === "Scissors" && nChoice === "Paper")
+                ) {
+                    result = "You win this round!";
+                    playerWins++;
+                } else {
+                    result = "NPC wins this round!";
+                    npcWins++;
+                }
+                alert(`You chose ${pChoice}, NPC chose ${nChoice}.\n${result}`);
+            }
+
+            if (playerWins === 2) {
+                let prize = Math.floor(Math.random() * 26) + 10; // 10-35
+                player.gold += prize;
+                alert(`Congratulations! You won the game and ${prize} gold!`);
+            } else {
+                let loss = Math.floor(Math.random() * 6) + 10; // 10-15
+                player.gold = Math.max(0, player.gold - loss);
+                alert(`You lost the game... and ${loss} gold.`);
+            }
+            updateUI();
+        }
+
+        function nothingEvent() {
+            document.getElementById('menu-desc').innerText = "You looked around, but found nothing of interest.";
+        }
+
+       function updateUI() {
+            // --- 1. DYNAMIC STAT CALCULATIONS ---
+            
+            // Instead of setting these to 100, we pull the values from the selected hero.
+            // If no hero is selected yet, it defaults to 100.
+            let baseMaxHp = player.selectedHero ? player.selectedHero.hp : 100;
+            let baseMaxMp = player.selectedHero ? player.selectedHero.mp : 100;
+            
+            let mpBonus = 0;
+            let hpBonus = 0;
+            let dmgBonus = 0;
+
+            // Apply bonuses from inventory items
+            if (inventory["Rubik's Cube"] > 0) {
+                mpBonus = 15;
+            }
+            if (inventory["Zumba Video"] > 0) {
+                hpBonus = 20;
+            }
+            // --- BASTON LOGIC ---
+            if (inventory["Baston"] > 0) {
+                dmgBonus = 15;
+            }
+
+            // Update player max stats with base + bonuses
+            player.maxHp = baseMaxHp + hpBonus;
+            player.maxMp = baseMaxMp + mpBonus;
+
+            player.bonusDmg = dmgBonus;
+
+            // Safety checks: current HP/MP shouldn't exceed new Max
+            if (player.hp > player.maxHp) player.hp = player.maxHp;
+            if (player.mp > player.maxMp) player.mp = player.maxMp;
+
+            // --- 2. UPDATE TEXT ELEMENTS ---
+            document.getElementById('ui-hp').innerText = Math.round(player.hp);
+            document.getElementById('ui-maxhp').innerText = player.maxHp;
+            document.getElementById('ui-mp').innerText = Math.round(player.mp);
+            document.getElementById('ui-maxmp').innerText = player.maxMp;
+            document.getElementById('ui-gold').innerText = player.gold;
+            document.getElementById('ui-lvl').innerText = player.lvl;
+            
+            // --- 3. UPDATE VISUAL BARS ---
+            if (document.getElementById('hp-fill')) {
+                document.getElementById('hp-fill').style.width = (player.hp / player.maxHp * 100) + "%";
+            }
+            if (document.getElementById('mp-fill')) {
+                document.getElementById('mp-fill').style.width = (player.mp / player.maxMp * 100) + "%";
+            }
+
+            // --- 4. EXPERIENCE & LEVELS ---
+            const expLabel = document.getElementById('ui-exp');
+            const nextExpLabel = document.getElementById('ui-next-exp');
+            
+            if (player.lvl >= 5) {
+                expLabel.innerText = "MAXED";
+                nextExpLabel.innerText = "";
+            } else {
+                expLabel.innerText = player.exp;
+                nextExpLabel.innerText = expRequirements[player.lvl];
+            }
+
+            // --- 5. COMBAT BUTTONS ---
+            document.getElementById('atk-2').disabled = (player.lvl < 3);
+            document.getElementById('atk-3').disabled = (player.lvl < 5);
+
+            if(player.selectedHero) {
+                document.getElementById('atk-1').innerText = player.selectedHero.abilities[0].name;
+                document.getElementById('atk-2').innerText = player.selectedHero.abilities[1].name;
+                document.getElementById('atk-3').innerText = player.selectedHero.abilities[2].name;
+            }
+        }
+
+        function addExp(amount) {
+            if (player.lvl >= 5) return;
+            player.exp += amount;
+            let req = expRequirements[player.lvl];
+            while (player.exp >= req && player.lvl < 5) {
+                player.exp -= req;
+                player.lvl++;
+                applyLevelUpStats();
+                req = expRequirements[player.lvl];
+                alert(`Level Up! You are now Level ${player.lvl}`);
+            }
+            updateUI();
+        }
+
+        function applyLevelUpStats() {
+            const scale = player.selectedHero.scaling[player.lvl];
+            if(scale) {
+                if(scale.hp) player.maxHp += scale.hp;
+                if(scale.mp) player.maxMp += scale.mp;
+                if(scale.dmgBonus) player.bonusDmg += scale.dmgBonus;
+            }
+            player.hp = player.maxHp;
+            player.mp = player.maxMp;
+        }
+
+        /* =========================================
+           WORLD NAVIGATION
+           ========================================= */
+        function openMap() { renderMenu("Map", ["Home", "Sir DIY's Tavern", "GYM", "AKIC"]); }
+        function openExplore() { renderMenu("Explore", ["Alley Way Central", "The Fugging Kingdom"]); }
+
+        function renderMenu(title, options) {
+                const content = document.getElementById('menu-content');
+                content.innerHTML = "";
+                document.getElementById('menu-title').innerText = title;
+                document.getElementById('menu-desc').innerText = "Select an option";
+                
+                // Hide UI elements as per your existing code
+                document.getElementById('gold-claim-btn').style.display = "none";
+                document.getElementById('exp-claim-btn').style.display = "none";
+                document.getElementById('rest-btn').style.display = "none";
+                document.getElementById('gym-ui').style.display = "none";
+                document.getElementById('quiz-ui').style.display = "none";
+
+            options.forEach(name => {
+                const item = document.createElement('div');
+                item.className = "menu-item";
+                item.innerText = name;
+                
+                let menuTimer = null;
+                item.onclick = () => {
+                    if (menuTimer === null) {
+                        // FIRST CLICK: Display Description
+                        menuTimer = setTimeout(() => {
+                            if (title === "Map") {
+                                document.getElementById('menu-desc').innerText = mapLocations[name] || "Description unknown.";
+                            } 
+                            // Added: Check for Alley Way Central in the Explore menu
+                            else if (title === "Explore" && name === "Alley Way Central") {
+                                document.getElementById('menu-desc').innerText = "The common grounds of poverty overrun by thieving peasants stealing anything that has value including lives.";
+                            }
+                            else if (title === "Explore" && name === "The Fugging Kingdom") {
+                                document.getElementById('menu-desc').innerText = "Once a peaceful and prosperous Kingdom fallen due to the Fugging Invasion exiling and forcing many outside the kingdom.";
+                            }
+                            menuTimer = null;
+                        }, 250);
+                    } else {
+                        // SECOND CLICK (Double Click): Execute Action
+                        clearTimeout(menuTimer); 
+                        menuTimer = null;
+
+                        if (name === "Sir DIY's Tavern") openTavern();
+                        else if (name === "GYM") openGym();
+                        else if (name === "AKIC") openSchool();
+                        // Ensure this name matches exactly as written in openExplore()
+                        else if (name === "Alley Way Central") { currentLocation = "Alley Way Central"; triggerExplorationEvent();} 
+                        else if (name === "The Fugging Kingdom") {  currentLocation = "The Fugging Kingdom";triggerExplorationEvent();}
+                        else if (name === "Home") travelTo("Home");
+                        else travelTo(name);
+                    }
+                };
+                content.appendChild(item);
+            });
+            document.getElementById('sub-menu').style.display = 'block';
+        }
+
+        /* =========================================
+           GYM LOGIC
+           ========================================= */
+        function openGym() {
+            document.getElementById('menu-title').innerText = "GYM";
+            document.getElementById('menu-desc').innerText = mapLocations["GYM"];
+            const content = document.getElementById('menu-content');
+            content.innerHTML = "";
+            ["Weight Lifting", "Sparring"].forEach(opt => {
+                const btn = document.createElement('div');
+                btn.className = "menu-item";
+                btn.innerText = opt;
+                btn.onclick = () => { if(opt === "Weight Lifting") showGymLevels("lifting"); else showGymLevels("sparring"); };
+                content.appendChild(btn);
+            });
+        }
+
+        function showGymLevels(type) {
+            const content = document.getElementById('menu-content');
+            content.innerHTML = "";
+            const data = gymData[type];
+            const playerLvl = type === "lifting" ? player.gymLvlLift : player.gymLvlSpar;
+
+            data.forEach((lvlObj, idx) => {
+                const btn = document.createElement('div');
+                btn.className = "menu-item";
+                
+                // --- ADD DISCOUNT LOGIC HERE ---
+                const hasDiscount = inventory["Gym discount"] > 0;
+                const actualCost = hasDiscount ? Math.floor(lvlObj.cost * 0.4) : lvlObj.cost; // 60% off means pay 40%
+
+                let statusTxt = lvlObj.done ? " [COMPLETED]" : "";
+                btn.innerText = `Level ${lvlObj.lvl} (${actualCost}g)${statusTxt}`;
+                
+                if (lvlObj.lvl > playerLvl) btn.style.opacity = "0.3";
+                
+                btn.onclick = () => {
+                    if (lvlObj.lvl > playerLvl) { alert("Complete previous levels first!"); return; }
+                    if (player.gold < actualCost) { alert("Not enough gold!"); return; }
+                    
+                    const promptMsg = hasDiscount 
+                        ? `Gym discount applied! Start Level ${lvlObj.lvl} ${type} for ${actualCost}g?`
+                        : `Start Level ${lvlObj.lvl} ${type}? Cost: ${actualCost}g`;
+
+                    if (confirm(promptMsg)) {
+                        // Deduct the calculated cost and consume the item
+                        player.gold -= actualCost;
+                        if (hasDiscount) {
+                            inventory["Gym discount"] -= 1;
+                            alert("Gym discount used!");
+                        }
+                        updateUI();
+
+                        if (type === "lifting") startLifting(lvlObj, idx);
+                        else startSparring(lvlObj, idx);
+                    }
+                };
+                content.appendChild(btn);
+            });
+        }
+
+        function startLifting(lvlObj, idx) {
+            document.getElementById('menu-content').innerHTML = "";
+            document.getElementById('gym-ui').style.display = "block";
+            liftClicks = 0;
+            liftTarget = lvlObj.clicks;
+            liftTimeLeft = lvlObj.time;
+            liftTimerStarted = false;
+            updateGymUI();
+            document.getElementById('gym-timer').innerText = `Time: ${liftTimeLeft}s (Click Lift to Start)`;
+            document.getElementById('lift-btn').style.display = "block";
+            document.getElementById('lift-btn').onclick = () => registerLift(lvlObj, idx);
+        }
+
+        function registerLift(lvlObj, idx) {
+            if (!liftTimerStarted) {
+                liftTimerStarted = true;
+                liftInterval = setInterval(() => {
+                    liftTimeLeft--;
+                    updateGymUI();
+                    if (liftTimeLeft <= 0) {
+                        clearInterval(liftInterval);
+                        document.getElementById('lift-btn').style.display = "none";
+                        alert("Time's up! You failed.");
+                        openGym();
+                    }
+                }, 1000);
+            }
+            liftClicks++;
+            updateGymUI();
+            if (liftClicks >= liftTarget) {
+                clearInterval(liftInterval);
+                document.getElementById('lift-btn').style.display = "none";
+                if(!lvlObj.done) {
+                    player.maxHp += lvlObj.reward;
+                    player.hp = player.maxHp;
+                    lvlObj.done = true;
+                    if(player.gymLvlLift < 3) player.gymLvlLift++;
+                    alert(`Success! HP increased by +${lvlObj.reward}`);
+                } else {
+                    alert("Completed! No rewards granted as you already finished this.");
+                }
+                updateUI();
+                openGym();
+            }
+        }
+
+        function updateGymUI() {
+            document.getElementById('gym-stats').innerText = `Clicks: ${liftClicks} / ${liftTarget}`;
+            document.getElementById('gym-timer').innerText = `Time: ${liftTimeLeft}s`;
+        }
+
+        function startSparring(lvlObj, idx) {
+            closeSubMenu();
+            isCombatActive = true;
+            isSparring = true;
+            currentSparReward = lvlObj.reward;
+            currentSparIndex = idx;
+            
+            setupEnemy(lvlObj.enemy.name, lvlObj.enemy.hp, lvlObj.enemy.dmg, 0, 0);
+            document.getElementById('items-btn').disabled = true;
+            document.getElementById('flee-btn').innerText = "Give Up";
+            
+            document.getElementById('exploration-view').style.display = 'none';
+            document.getElementById('combat-view').style.display = 'flex';
+            document.getElementById('standard-nav').style.display = 'none';
+            document.getElementById('combat-nav').style.display = 'flex';
+        }
+
+        /* =========================================
+           AKIC SCHOOL SYSTEM
+           ========================================= */
+        function openSchool() {
+            document.getElementById('menu-title').innerText = "AKIC";
+            document.getElementById('menu-desc').innerText = mapLocations["AKIC"];
+            const content = document.getElementById('menu-content');
+            content.innerHTML = "";
+
+            Object.keys(schoolData).forEach(field => {
+                const btn = document.createElement('div');
+                btn.className = "menu-item";
+                let status = schoolData[field].finished ? " [GRADUATED]" : (schoolData[field].enrolled ? " [ENROLLED]" : " (100g)");
+                btn.innerText = field + status;
+                btn.onclick = () => handleFieldEntry(field);
+                content.appendChild(btn);
+            });
+        }
+
+        function handleFieldEntry(field) {
+            const data = schoolData[field];
+            if(!data.enrolled) {
+                // Calculate the cost
+                let cost = 100;
+                const hasDiscount = inventory["Scholarship discount"] > 0;
+                
+                if (hasDiscount) {
+                    cost = 20; // 80% off 100g
+                }
+
+                if(player.gold >= cost) {
+                    const promptMsg = hasDiscount 
+                        ? `Scholarship discount applied! Enroll in ${field} for only ${cost}g?` 
+                        : `Enroll in ${field} for ${cost}g?`;
+
+                    if(confirm(promptMsg)) {
+                        player.gold -= cost;
+                        data.enrolled = true;
+                        
+                        // Consume the item
+                        if (hasDiscount) {
+                            inventory["Scholarship discount"] -= 1;
+                            alert("Scholarship discount used!");
+                        }
+                        
+                        updateUI();
+                        showQuizLevels(field);
+                    }
+                } else {
+                    alert(`Not enough gold! You need ${cost}g to enroll.`);
+                }
+            } else {
+                showQuizLevels(field);
+            }
+        }
+
+        function showQuizLevels(field) {
+            currentField = field;
+            document.getElementById('menu-title').innerText = `${field} Subjects`;
+            const content = document.getElementById('menu-content');
+            content.innerHTML = "";
+            const levels = schoolData[field].levels;
+
+            levels.forEach((lvl, idx) => {
+                const btn = document.createElement('div');
+                btn.className = "menu-item";
+                btn.innerText = `Level ${idx+1}: ${lvl.name}`;
+                btn.onclick = () => startQuiz(idx);
+                content.appendChild(btn);
+            });
+        }
+
+        function startQuiz(lvlIdx) {
+            currentQuizLvl = lvlIdx;
+            currentQuestionIdx = 0;
+            document.getElementById('menu-content').innerHTML = "";
+            document.getElementById('quiz-ui').style.display = "block";
+            loadQuestion();
+        }
+
+        function loadQuestion() {
+            const field = schoolData[currentField];
+            const lvl = field.levels[currentQuizLvl];
+            const qData = lvl.questions[currentQuestionIdx];
+
+            document.getElementById('quiz-question').innerText = `[${lvl.name}] Q${currentQuestionIdx + 1}: ${qData.q}`;
+            const optContainer = document.getElementById('quiz-options');
+            optContainer.innerHTML = "";
+
+            qData.options.forEach(opt => {
+                const div = document.createElement('div');
+                div.className = "quiz-option";
+                div.innerText = opt;
+                div.onclick = () => checkQuizAnswer(opt, qData.a);
+                optContainer.appendChild(div);
+            });
+        }
+
+        function checkQuizAnswer(selected, correct) {
+            if(selected === correct) {
+                currentQuestionIdx++;
+                if(currentQuestionIdx >= 3) {
+                    alert(`Passed ${schoolData[currentField].levels[currentQuizLvl].name}!`);
+                    checkFieldCompletion();
+                } else {
+                    loadQuestion();
+                }
+            } else {
+                alert("Wrong Answer! You failed and must restart this level.");
+                currentQuestionIdx = 0;
+                loadQuestion();
+            }
+        }
+
+        function checkFieldCompletion() {
+            const field = schoolData[currentField];
+            if (currentQuizLvl === 2) {
+                if(!field.finished) {
+                    field.finished = true;
+                    player.maxMp += 15;
+                    player.mp = player.maxMp;
+                    alert("Congratulations! You graduated from this field. Max MP +15.");
+                } else {
+                    alert("Level complete!");
+                }
+                updateUI();
+                showQuizLevels(currentField);
+            } else {
+                showQuizLevels(currentField);
+            }
+        }
+
+        /* =========================================
+           TAVERN & QUESTS
+           ========================================= */
+        function openTavern() {
+    document.getElementById('menu-title').innerText = "Sir DIY's Tavern";
+    
+    // REMOVED THE FREE CLAIM BUTTONS HERE
+    document.getElementById('gold-claim-btn').style.display = "none";
+    document.getElementById('exp-claim-btn').style.display = "none";
+    
+    const content = document.getElementById('menu-content');
+    content.innerHTML = "";
+
+    const tavernDesc = document.createElement('div');
+    tavernDesc.id = "shop-description"; 
+    tavernDesc.style = "padding:10px; margin-bottom:10px; border:1px solid var(--gold); background:#000; min-height:50px;";
+    tavernDesc.innerHTML = "<small>Select an NPC to talk to them...</small>";
+    content.appendChild(tavernDesc);
+
+    // Ensure these names match the "if" checks below
+    ["Grinder", "RackVille"].forEach(opt => {
+        const btn = document.createElement('div');
+        btn.className = "menu-item";
+        btn.innerText = opt;
+
+        if (opt === "Grinder") {
+            btn.onclick = () => {
+                document.getElementById('shop-description').innerHTML = `<strong>Grinder</strong>: <br>"Hello there hero... I offer Grinding Quests!"`;
+                highlightNPC(btn);
+            };
+            btn.ondblclick = () => { openGrinder(); };
+        } 
+        else if (opt === "Jack") {
+            btn.onclick = () => {
+                document.getElementById('shop-description').innerHTML = 
+                    `<strong>Jack</strong>: <br>"Greetings Fallen Boi. I am Jack. I shall aid you in your Journey to seek the end of this game."`;
+                highlightNPC(btn);
+            };
+            btn.ondblclick = () => { openJackQuests(); };
+        }
+        else if (opt === "RackVille") {
+            btn.onclick = () => {
+                document.getElementById('shop-description').innerHTML = `<strong>RackVille</strong>: <br>"Hot spot for feasts, essentials, and merchants."`;
+                highlightNPC(btn);
+            };
+            btn.ondblclick = () => { openShop(); };
+        }
+
+        content.appendChild(btn);
+    });
+    
+    document.getElementById('sub-menu').style.display = 'block';
+}
+        
+
+// Helper function to handle visual feedback
+function highlightNPC(btnElement) {
+    document.querySelectorAll('.menu-item').forEach(el => el.style.borderColor = "");
+    btnElement.style.borderColor = "var(--gold)";
+}
+
+        function openGrinder() {
+            document.getElementById('menu-title').innerText = "Grinder";
+            const content = document.getElementById('menu-content');
+            content.innerHTML = "";
+            ["q1", "q2", "q3"].forEach(key => {
+                const q = quests[key];
+                const btn = document.createElement('div');
+                btn.className = "menu-item";
+                let statusText = q.status === "completed" ? "[COMPLETED] " : (q.status === "active" ? "[ACTIVE] " : "");
+                btn.innerText = statusText + q.name;
+                if(q.status === "locked") btn.style.opacity = "0.5";
+                btn.onclick = () => { if(q.status === "locked") return; showQuestDetails(q); };
+                content.appendChild(btn);
+            });
+        }
+
+        function showQuestDetails(q) {
+            alert(`${q.desc}\n\nReward: ${q.rewardG}g, ${q.rewardE}exp\nProgress: ${(inventory[q.item] || 0)} / ${q.req}`);
+            if(q.status === "available" || q.status === "completed") {
+                if(confirm("Accept this quest?")) { q.status = "active"; openGrinder(); }
+            } else if(q.status === "active") {
+                if((inventory[q.item] || 0) >= q.req) {
+                    if(q.id === "q3") player.gold -= 100;
+                    player.gold += q.rewardG;
+                    addExp(q.rewardE);
+                    inventory[q.item] -= q.req;
+                    q.status = "completed";
+                    if(q.id === "q1" && quests.q2.status === "locked") quests.q2.status = "available";
+                    if(q.id === "q2" && quests.q3.status === "locked") quests.q3.status = "available";
+                    alert("Quest Completed!");
+                    updateUI(); openGrinder();
+                } else alert("Not enough materials!");
+            }
+        }
+
+        /* =========================================
+           COMBAT ENGINE & ABILITY LOGIC
+           ========================================= */
+        function setupCombatButtons() {
+            [1, 2, 3].forEach(num => {
+                const btn = document.getElementById(`atk-${num}`);
+                let abTimer = null;
+                btn.onclick = () => {
+                    if (!isPlayerTurn) return;
+                    const ab = player.selectedHero.abilities[num-1];
+                    if (abTimer === null) {
+                        abTimer = setTimeout(() => { document.getElementById('combat-log').innerText = ab.desc; abTimer = null; }, 250);
+                    } else {
+                        clearTimeout(abTimer); abTimer = null;
+                        executeAbility(ab);
+                    }
+                };
+            });
+        }
+
+        function executeAbility(ab) {
+            let actualCost = ab.cost;
+            if(player.freeMPTurns > 0) actualCost = 0;
+            if(player.selectedHero.name === "Rah Jay" || player.selectedHero.name === "Lil Nas") {
+                if(player.mpReduce) actualCost -= 5;
+            }
+            if (player.mp < actualCost) { alert("Not enough MP!"); return; }
+            player.mp -= Math.max(0, actualCost);
+
+            let logMsg = `Used ${ab.name}! `;
+            
+            // Standard DMG calculation
+            const getDmg = (range) => {
+                const baseDmg = Math.floor(Math.random() * (range[1] - range[0] + 1)) + range[0];
+                
+                // player.bonusDmg comes from items like the Baston
+                // player.strBuff comes from temporary skills or leveling
+                return baseDmg + (player.bonusDmg || 0) + (player.strBuff || 0);
+            };
+
+            switch(ab.type) {
+                case "dmg":
+                    let d = getDmg(ab.val);
+                    enemy.hp -= d;
+                    logMsg += `Dealt ${d} dmg.`;
+                    break;
+                case "debuff_dmg":
+                    let d1 = getDmg(ab.val);
+                    enemy.hp -= d1;
+                    player.enemyDmgDebuff = ab.debuff;
+                    player.enemyDebuffTurns = ab.duration; 
+                    logMsg += `Dealt ${d1} dmg and lowered enemy dmg by ${ab.debuff} for ${ab.duration} turns.`;
+                    break;
+                case "stun_buff":
+                    stunTurns = ab.stun;
+                    player.mpReduce = ab.mpReduce;
+                    logMsg += `Enemy stunned for ${ab.stun} turns! MP costs reduced.`;
+                    break;
+                case "chance_dmg":
+                    let r = Math.random();
+                    let d2 = r < ab.chance1 ? getDmg(ab.val1) : getDmg(ab.val2);
+                    enemy.hp -= d2;
+                    logMsg += `Lucky! Dealt ${d2} dmg.`;
+                    break;
+                case "dmg_stun_chance":
+                    let d3 = getDmg(ab.val);
+                    enemy.hp -= d3;
+                    if(Math.random() < ab.stunChance) stunTurns = 1;
+                    logMsg += `Dealt ${d3} dmg.`;
+                    break;
+                case "gamble_death":
+                    let hpPerc = enemy.hp / enemy.maxHp;
+                    let killChance = 0.1;
+                    if(hpPerc <= 0.2) killChance = 1.0;
+                    else if(hpPerc <= 0.5) killChance = 0.5;
+                    else if(hpPerc <= 0.7) killChance = 0.3;
+                    
+                    if(Math.random() < killChance) {
+                        enemy.hp = 0;
+                        logMsg += "DEATH ROLL! Enemy died instantly!";
+                    } else {
+                        player.hp = 0;
+                        logMsg += "DEATH ROLL! You killed yourself!";
+                    }
+                    break;
+                case "dmg_steal":
+                    let d4 = getDmg(ab.val);
+                    enemy.hp -= d4;
+                    logMsg += `Dealt ${d4} dmg.`;
+                    if (Math.random() < ab.stealChance) {
+                        player.gold += ab.gold;
+                        logMsg += ` Lucky! You stole ${ab.gold}g!`;
+                    } else {
+                        logMsg += ` Failed to steal any gold.`;
+                    }
+                    break;
+                case "dmg_bounty":
+                    let d5 = getDmg(ab.val);
+                    enemy.hp -= d5;
+                    if(enemy.hp <= 0) { player.gold += ab.bonusGold; logMsg += `Killed! Earned +${ab.bonusGold}g bounty!`; }
+                    else logMsg += `Dealt ${d5} dmg.`;
+                    break;
+                case "dmg_dodge_chance":
+                    let d6 = getDmg(ab.val);
+                    enemy.hp -= d6;
+                    if(Math.random() < ab.dodgeChance) player.dodgeNext = true;
+                    logMsg += `Dealt ${d6} dmg. Prep for dodge!`;
+                    break;
+                case "free_mp_heal":
+                    player.hp = Math.min(player.maxHp, player.hp + ab.heal);
+                    player.freeMPTurns = ab.duration;
+                    logMsg += `Healed ${ab.heal} HP. Abilities cost 0 MP for 2 turns!`;
+                    break;
+                case "dmg_extra_chance":
+                    let dBase = getDmg(ab.val);
+                    let extra = 0;
+                    if (Math.random() < ab.chance) {
+                        extra = ab.bonusVal;
+                        logMsg += `CRITICAL HIT! `; 
+                    }    
+                    let totalDmg = dBase + extra;
+                    enemy.hp -= totalDmg;
+                    logMsg += `Dealt ${totalDmg} dmg.`;
+                    break;
+                case "buff_dmg_mp":
+                    player.strBuff += ab.val;
+                    player.mpReduce = ab.mpReduce;
+                    player.strTurns = ab.duration;
+                    logMsg += `Buffed strength and lowered MP costs!`;
+                    break;
+                case "dmg_debuff":
+                    let d7 = getDmg(ab.val);
+                    enemy.hp -= d7;
+                    player.enemyDmgDebuff += ab.debuff;
+                    player.enemyDebuffTurns = 1;
+                    logMsg += `Dealt ${d7} dmg and lowered enemy power.`;
+                    break;
+                case "crit_stun_chance":
+                    let d8 = getDmg(ab.val) * 1; // Manual crit
+                    enemy.hp -= d8;
+                    if(Math.random() < ab.stunChance) stunTurns = 1;
+                    logMsg += `CRITICAL! Dealt ${d8} dmg.`;
+                    break;
+                case "heal_dmg":
+                    let h = Math.floor(Math.random() * (ab.heal[1] - ab.heal[0] + 1)) + ab.heal[0];
+                    let d9 = getDmg(ab.val);
+                    player.hp = Math.min(player.maxHp, player.hp + h);
+                    enemy.hp -= d9;
+                    logMsg += `Back Tracked! Healed ${h} and dealt ${d9} dmg.`;
+                    break;
+                case "percent_dmg_stun":
+                    let d10 = Math.floor(enemy.hp * ab.val);
+                    enemy.hp -= d10;
+                    stunTurns = ab.stun;
+                    logMsg += `Sent to future! Dealt ${d10} dmg and stunned enemy.`;
+                    break;
+                case "self_dmg_attack":
+                    let d11 = getDmg(ab.val);
+                    enemy.hp -= d11;
+                    player.hp -= ab.selfDmg;
+                    logMsg += `Bloody Fists! Dealt ${d11} dmg but lost ${ab.selfDmg} HP.`;
+                    break;
+                case "lifesteal":
+                    let d12 = getDmg(ab.val);
+                    enemy.hp -= d12;
+                    player.hp = Math.min(player.maxHp, player.hp + ab.heal);
+                    logMsg += `Life Steal! Dealt ${d12} and healed ${ab.heal}.`;
+                    break;
+                case "dmg_stun":
+                    let d13 = getDmg(ab.val);
+                    enemy.hp -= d13;
+                    stunTurns = ab.stun;
+                    logMsg += `Stunning Strike! Dealt ${d13} dmg.`;
+                    break;
+                case "dmg_debuff_buff":
+                    let d14 = getDmg(ab.val);
+                    enemy.hp -= d14;
+                    // Apply debuff to enemy
+                    player.enemyDmgDebuff += ab.debuff;
+                    player.enemyDebuffTurns = ab.duration; 
+                    // Apply buff to player
+                    player.strBuff += ab.buff;
+                    player.strTurns = ab.duration; // Now uses the 2 turns defined in data
+                    logMsg += `Tormented! Dealt ${d14} and swapped power for ${ab.duration} turns!`;
+                    break;
+                case "block_debuff":
+                    player.dodgeNext = true;
+                    player.enemyDmgDebuff += ab.debuff;
+                    player.enemyDebuffTurns = ab.duration;
+                    logMsg += "Magic Barrier up! Next attack blocked.";
+                    break;
+            }
+
+            enemy.hp = Math.max(0, enemy.hp);
+            document.getElementById('combat-log').innerText = logMsg;
+            updateEnemyBar();
+
+            if(player.strTurns > 0) { player.strTurns--; if(player.strTurns === 0) player.strBuff = 0; }
+            if(player.freeMPTurns > 0) player.freeMPTurns--;
+
+            updateUI();
+            if(enemy.hp <= 0) win();
+            else { isPlayerTurn = false; setTimeout(enemyTurn, 1000); }
+        }
+
+        function enemyTurn() {
+            // 1. Check for Stun
+            if(stunTurns > 0) {
+                stunTurns--;
+                document.getElementById('combat-log').innerText = `Enemy is stunned! (${stunTurns} left)`;
+                setTimeout(() => { isPlayerTurn = true; }, 1000);
+                return;
+            }
+
+            // 2. Check for Dodge
+            if(player.dodgeNext) {
+                player.dodgeNext = false;
+                document.getElementById('combat-log').innerText = "You dodged the attack!";
+                setTimeout(() => { isPlayerTurn = true; }, 1000);
+                return;
+            }
+
+            // 3. Enemy Performs Attack
+            let baseDmg = Math.floor(Math.random() * (enemy.dmg[1] - enemy.dmg[0] + 1)) + enemy.dmg[0];
+            let actualDmg = Math.max(0, baseDmg - player.enemyDmgDebuff);
+            player.hp = Math.max(0, player.hp - actualDmg);
+            
+            let logMsg = `${enemy.name} attacks for ${actualDmg} dmg!`;
+
+            // 4. DEBUFF COUNTDOWN (Insert here)
+            if(player.enemyDebuffTurns > 0) {
+                player.enemyDebuffTurns--;
+                if(player.enemyDebuffTurns === 0) {
+                    player.enemyDmgDebuff = 0; // Reset debuff amount
+                    logMsg += " The enemy's power has returned!";
+                }
+            }
+
+            document.getElementById('combat-log').innerText = logMsg;
+
+            // 5. Wrap up Turn
+            updateUI();
+            if(player.hp <= 0) lose();
+            else isPlayerTurn = true;
+        }
+
+        function startFight() {
+            closeSubMenu();
+            isCombatActive = true; 
+            isPlayerTurn = true; 
+            stunTurns = 0;
+            player.enemyDmgDebuff = 0; 
+            player.dodgeNext = false;
+            
+            let roll = Math.random() * 100;
+            
+            // Check location for enemy pools
+            if (currentLocation === "The Fugging Kingdom") {
+                if(roll < 25) setupEnemy("Fugging Church", 180, [15, 30], 20, 35);
+                else if(roll < 80) setupEnemy("Fugging School", 200, [15, 35], 25, 40);
+                else setupEnemy("Fugging Children", 250, [25, 40], 30, 45);
+            } else {
+                // Default: Alley Way Central
+                if(roll < 25) setupEnemy("Peasant", 80, [10, 15], 5, 15);
+                else if(roll < 80) setupEnemy("Street Smuggler", 100, [10, 25], 10, 20);
+                else setupEnemy("Alley Lord", 150, [15, 25], 15, 30);
+            }
+
+            // APPLY THE IMAGE
+            const enemyImg = document.querySelector('.enemy-avatar');
+            if (enemyImg) {
+                // This looks for "Images/Peasant.png", "Images/Fugging children.png", etc.
+                enemyImg.style.backgroundImage = `url('images/${enemy.name}.png')`;
+                enemyImg.style.backgroundSize = 'cover';
+                enemyImg.style.backgroundPosition = 'center';
+            }
+
+            document.getElementById('exploration-view').style.display = 'none';
+            document.getElementById('combat-view').style.display = 'flex';
+            document.getElementById('standard-nav').style.display = 'none';
+            document.getElementById('combat-nav').style.display = 'flex';
+        }
+
+        function setupEnemy(name, hp, dmg, gold, exp) {
+            enemy = { name, hp, maxHp: hp, dmg, gold, exp };
+            document.getElementById('enemy-name-ui').innerText = name.toUpperCase();
+            updateEnemyBar();
+        }
+
+        function win() { 
+            if (isSparring) {
+                const lvlObj = gymData.sparring[currentSparIndex];
+                if(!lvlObj.done) {
+                    player.bonusDmg += currentSparReward;
+                    lvlObj.done = true;
+                    if(player.gymLvlSpar < 3) player.gymLvlSpar++;
+                    alert(`Sparring Victory! Damage permanently increased by +${currentSparReward}`);
+                } else alert("Sparring Victory!");
+            } else {
+                let gGain = enemy.gold; 
+                let eGain = enemy.exp;
+
+                // --- EMMEL BONUS LOGIC ---
+                if (player.equippedAccessory === "Emmel") {
+                    eGain += 10; // Add the +10 bonus to the local variable
+                }
+                // -------------------------
+
+                if(quests.q1.status === "active") inventory["Rags"] = (inventory["Rags"] || 0) + 1;
+                if(quests.q3.status === "active") inventory["Peasant Gold"] = (inventory["Peasant Gold"] || 0) + gGain;
+                else player.gold += gGain;
+
+                // The alert now shows the boosted eGain
+                alert(`Victory! +${gGain}g and +${eGain}exp ${player.equippedAccessory === "Emmel" ? "(+10 from Emmel)" : ""}`); 
+                addExp(eGain); 
+            }
+            endFight(); 
+        }
+
+        function lose() { 
+            alert(`Defeated! You were sent Home and lost 10g.`); 
+            player.gold = Math.max(0, player.gold - 10); 
+            player.hp = player.maxHp; player.mp = player.maxMp; 
+            endFight(); 
+        }
+        
+        function endFight() {
+            isCombatActive = false; isPlayerTurn = true; stunTurns = 0; isSparring = false;
+            player.enemyDmgDebuff = 0; player.mpReduce = 0; player.freeMPTurns = 0;
+            document.getElementById('items-btn').disabled = false;
+            document.getElementById('flee-btn').innerText = "Flee";
+            document.getElementById('exploration-view').style.display = 'block';
+            document.getElementById('combat-view').style.display = 'none';
+            document.getElementById('standard-nav').style.display = 'flex';
+            document.getElementById('combat-nav').style.display = 'none';
+            travelTo("Home");
+            updateUI();
+        }
+
+        /* =========================================
+           UTILITIES
+           ========================================= */
+        function openItems() {
+            document.getElementById('menu-title').innerText = "Inventory";
+            const content = document.getElementById('menu-content');
+            content.innerHTML = "";
+            document.getElementById('rest-btn').style.display = "none";
+
+            Object.keys(inventory).forEach(name => {
+                if(inventory[name] > 0) {
+                    const btn = document.createElement('div');
+                    btn.className = "menu-item"; 
+                    
+                    // Logic for Display Name
+                    let displayName = (player.equippedAccessory === name) ? `[E] ${name}` : name;
+                    btn.innerText = `${displayName} (x${inventory[name]})`;
+
+                    btn.onclick = () => {
+                        // --- 1. PASSIVE STAT ITEMS (Rubik's Cube) ---
+                        // Add any items here that should NOT be consumed but give passive bonuses
+                        const passiveItems = {
+                            "Rubik's Cube": "Passive Item: This complex puzzle increases your Max MP by 15 while in your inventory.",
+                            "Zumba Video": "A tutorial for Health exercise and dancing that improves Health Points by 20.",
+                            "Baston": "Passive Item: A light weapon that increases all damage dealt by 15."
+                        };
+
+                        if (passiveItems[name]) {
+                            alert(passiveItems[name]);
+                            return; // Stop here so it doesn't run the potion logic
+                        }
+
+                        // --- 2. EMMEL EQUIPMENT LOGIC ---
+                        if (name === "Emmel") {
+                            const description = "Item Description: Increases Exp rewards from enemies by +10.";
+                            const isEquipped = (player.equippedAccessory === "Emmel");
+
+                            if (!isEquipped) {
+                                if (confirm(`${description}\n\nDo you want to equip this item?`)) {
+                                    player.equippedAccessory = "Emmel";
+                                    alert("Emmel equipped!");
+                                    openItems(); 
+                                }
+                            } else {
+                                if (confirm(`${description}\n\nThis item is currently equipped. Do you want to unequip it?`)) {
+                                    player.equippedAccessory = null;
+                                    alert("Emmel unequipped.");
+                                    openItems(); 
+                                }
+                            }
+                            return; 
+                        }
+
+                        // --- 3. UNUSABLE ITEMS ---
+                        const unusable = [
+                            "Rags", "Empty Potion Bottle", "Peasant Gold", 
+                            "Old boot", "Bottle", "Dusty hat", 
+                            "Scholarship discount", "Gym discount" 
+                        ];
+
+                        if(unusable.includes(name)) {
+                            alert("This item cannot be used directly.");
+                            return;
+                        }
+
+                        // --- 4. CONSUMABLE ITEMS (Potions) ---
+                        if(confirm(`Are you sure you want to use ${name}?`)) {
+                            useItem(name);
+                            openItems(); 
+                        }
+                    };
+                    content.appendChild(btn);
+                }
+            });
+            document.getElementById('sub-menu').style.display = 'block';
+        }
+
+        function useItem(name) {
+            inventory[name]--;
+            if(name === "HP Potion") player.hp = Math.min(player.maxHp, player.hp + 100);
+            if(name === "MP Potion") player.mp = Math.min(player.maxMp, player.mp + 100);
+            if(name === "Strength Potion") { player.strBuff = 15; player.strTurns = 2; }
+            if(quests.q2.status === "active") inventory["Empty Potion Bottle"] = (inventory["Empty Potion Bottle"] || 0) + 1;
+            updateUI(); closeSubMenu();
+            if(isCombatActive) { isPlayerTurn = false; setTimeout(enemyTurn, 1000); }
+        }
+
+        function openShop() {
+            document.getElementById('menu-title').innerText = "Shop";
+            const content = document.getElementById('menu-content');
+            content.innerHTML = "";
+
+            // 1. Description Box (Helps show the Rubik's Cube info)
+            const shopDesc = document.createElement('div');
+            shopDesc.id = "shop-description";
+            shopDesc.style = "padding:10px; margin-bottom:10px; border:1px solid var(--gold); background:#000;";
+            shopDesc.innerHTML = "<small></small>";
+            content.appendChild(shopDesc);
+
+            // --- BUY SECTION ---
+            const buyHeader = document.createElement('h3');
+            buyHeader.innerText = "Items to Buy";
+            content.appendChild(buyHeader);
+
+            const buyItems = [
+                { name: "HP Potion", cost: 10, desc: "Restores 100 Health Points." }, 
+                { name: "MP Potion", cost: 10, desc: "Restores 100 Mana Points." }, 
+                { name: "Strength Potion", cost: 10, desc: "Temporarily boosts damage by 15." },
+                { name: "Rubik's Cube", cost: 100, desc: "A complex puzzle game that improves Mana Points by 15.", isUnique: true },
+                { name: "Zumba Video", cost: 100, desc: "A tutorial for Health exercise and dancing that improves Health Points by 20", isUnique: true },
+                { name: "Baston", cost: 100, desc: "A powerful and light weapon that improves damage by 15.", isUnique: true }
+            ];
+
+            buyItems.forEach(g => {
+                const btn = document.createElement('div');
+                btn.className = "menu-item"; 
+                
+                // --- SOLD OUT CHECK ---
+                const isOwned = inventory[g.name] > 0;
+                if (g.isUnique && isOwned) {
+                    btn.innerText = `${g.name} - SOLD OUT`;
+                    btn.style.opacity = "0.5";
+                    btn.style.color = "gray";
+                    btn.style.cursor = "default";
+                } else {
+                    btn.innerText = `${g.name} (${g.cost}g)`;
+                }
+
+                // Click to see the description you provided
+                btn.onclick = () => {
+                    document.getElementById('shop-description').innerHTML = 
+                        `<strong>${g.name}</strong>: ${g.desc} <br> <span style="color:var(--gold)">Price: ${g.cost}g</span>`;
+                    document.querySelectorAll('.menu-item').forEach(el => el.style.borderColor = "");
+                    btn.style.borderColor = "var(--gold)";
+                };
+
+                // Double click to buy
+                btn.ondblclick = () => {
+                    if (g.isUnique && isOwned) return; // Prevent buying sold out items
+
+                    if (player.gold >= g.cost) {
+                        player.gold -= g.cost;
+                        inventory[g.name] = (inventory[g.name] || 0) + 1;
+
+                        // --- SPECIFIC ITEM MESSAGES ---
+                        if (g.name === "Rubik's Cube") {
+                            alert(`Purchased ${g.name}! Your Max MP has increased by 15.`);
+                        } 
+                        else if (g.name === "Zumba Video") {
+                            alert(`Purchased ${g.name}! Your Max HP has increased by 20.`);
+                        } 
+                        else if (g.name === "Baston") {
+                            alert(`Purchased ${g.name}! Your Attack Damage has increased by 15.`);
+                        }
+                        else {
+                            // Default message for potions or other items
+                            alert(`Purchased ${g.name}!`);
+                        }
+
+                        updateUI(); // Applies the stat bonus dynamically
+                        openShop(); // Refresh to show "SOLD OUT"
+                    } else {
+                        alert("Not enough gold!");
+                    }
+                };
+
+                content.appendChild(btn);
+            });
+
+        // --- SELL SECTION ---
+        const sellHeader = document.createElement('h3');
+        sellHeader.innerText = "Your Inventory (Sell)";
+        sellHeader.style.marginTop = "20px";
+        content.appendChild(sellHeader);
+
+        Object.keys(inventory).forEach(itemName => {
+        if (inventory[itemName] > 0) {
+            const btn = document.createElement('div');
+            btn.className = "menu-item";
+
+            if (itemName === "Rags") {
+                btn.innerText = `${itemName} (Quest Item - Unsellable)`;
+                btn.style.opacity = "0.5";
+                btn.onclick = () => alert("This is a quest item and cannot be sold.");
+            } else {
+                // Determine price based on our previous list or default to 2g
+                const price = sellPrices[itemName] ?? 2;
+                
+                btn.innerText = `${itemName} (x${inventory[itemName]}) - Sell for ${price}g`;
+                btn.onclick = () => openSellPrompt(itemName, price);
+            }
+            content.appendChild(btn);
+            }
+        });
+    }
+
+    function openSellPrompt(itemName, pricePerItem) {
+        const maxAmount = inventory[itemName];
+        let amount = prompt(`How many ${itemName} do you want to sell? (1 - ${maxAmount})`, "1");
+        
+        amount = parseInt(amount);
+
+        // Validate the input
+        if (isNaN(amount) || amount <= 0 || amount > maxAmount) {
+            alert("Invalid amount.");
+            return;
+        }
+
+        const totalReward = amount * pricePerItem;
+
+        if (confirm(`Sell ${amount}x ${itemName} for ${totalReward} Gold?`)) {
+            inventory[itemName] -= amount;
+            player.gold += totalReward;
+            alert(`You earned ${totalReward} Gold!`);
+            updateUI();
+            openShop(); // Refresh the shop to update the counts displayed
+        }
+    }
+
+        function travelTo(loc) { 
+            closeSubMenu(); document.getElementById('location-text').innerText = loc; 
+            if(loc === "Home") { 
+                renderMenu("Home", []);
+                document.getElementById('rest-btn').style.display = "block";
+            }
+        }
+
+        //Console Commands
+        function processCommand(input) {
+            if (!input || !input.startsWith("!")) return;
+
+            const args = input.split(" ");
+            const command = args[0].toLowerCase();
+
+            if (command === "!getitem") {
+                if (args.length < 3) {
+                    alert("Syntax Error: Use !getItem [itemName] [amount]");
+                    return;
+                }
+
+                // Logic to handle item names with spaces (e.g., !getItem Old Boot 3)
+                const amount = parseInt(args[args.length - 1]);
+                const itemName = args.slice(1, args.length - 1).join(" ");
+
+                if (isNaN(amount) || amount <= 0) {
+                    alert("Syntax Error: Amount must be a valid number.");
+                    return;
+                }
+
+                inventory[itemName] = (inventory[itemName] || 0) + amount;
+                alert(`Successfully added ${amount}x ${itemName} to inventory.`);
+                updateUI();
+            }
+            else if (command === "!getsecret") {
+                // Step 1: Ask for the hero's name
+                const heroName = prompt(`From Jacob:
+                Привет everyone, you found the secret. I hope you guys are enjoying this game. I wanted to make one in Unity and make a mobile one but that has a long process. If you guys are curious, NO, I did not write all the code I used AI because I wouldn't be able to make this on time and I wanted to upload this game online before summer review starts. This game seems pretty short because I had to cut out so many things I just didn't have enough time. 
+
+                If you are wondering why would I make this then 1.) I always bragged or said that I like programming and I am going to take IT or computer science and it felt like I was lying to all of yo, in the school year I never made any progress in programming because I and we were so busy and considering this upcoming school yer we are going to be even more busy 
+
+                and 2.) because of you guys, you guys made the school year awesome. Learning in class, participating in events, hangouts, and outings. I am gonna be honest I have never been this active and outgoing before. In Junior High I mostly spent my free time at home I was not very close with my previous classmates before not saying I don't have any friends it's just you guys made our school year 67 times better. So basically this game this websites is a tribute for the QAYYIM BOIS you even got a message about Fallen Bois because it feels like this school year we will be separated it is certain that not all of us are going to be in the same section and we might even ignore or forget each other once we warm up to our new sections and friends. 
+
+                I just want you all to know no matter how many seats, rooms, schools, colleges, Cities or even countries apart from each we will always be The QAYYIM BOIS 1ST SEM TO 2ND SEM 2025-2026.
+
+                I left each one of you a message Just enter your hero names🌽:)`);
+
+                if (heroName) {
+                    const name = heroName.trim();
+                    let secretMessage = "";
+
+                    // Step 2: Check the name and assign the secret
+                    switch (name) {
+                        case "Rah Jay": secretMessage = 
+                        "Sup Rah Jay. Hope you like your hero I am not sure if you are ok with having an old guy as your hero but hope you like your abilities they are pretty similar to the other abilities of the other bois that is because there were so many of you wanted time manipulation so I had to make slight differences in your characters. \n\nI can remember the time we sat together in Gen chem. At that time I really wanted to get closer with the bois and you were the first guy a talked to. I even invited you for lunch but it was pretty awkward sorry about that. As time went on you started to get closer with Akhil, Lil Nas, and G-man. I am hoping for you to stay in AKIC because like what you said you always transfer schools and Homes. You are a pretty chill guy.";
+                        break;
+                        case "Baurgona": secretMessage = 
+                        "Ciao, come vanno i tuoi progressi su Duolingo? You said you wanted to control probability. It is a pretty OP power so I had to think of a different way of using your power. I thought of Stat and Prob which gave me an idea Gambling and I made you into a gunslinger which uses a revolver which is related to Russian roulette so that's how I made your guy. \n\nI'll be honest from the beginning of the school year's introduction you looked pretty confident and have good English like you were aura farming. I thought you were the kind of person who wouldn't play Emmel ride motorcycle or even know wood working. You are a pretty talented guy. I also want to say thanks for being our class rep you also recommended me to be it but I definitely could not do a good job like you. Pretty ironic considering I am a LEEEE member. I also want to congratulate your achievements in Langkom. You are an optimistic and hard working person which I respect you for.";
+                        break;
+                        case "Zhadid": secretMessage = 
+                        "Hello Zhadid U like ur character? I made you into an assassin or rogue to match your power and hope you like what your hero looks.\n\nIn the beginning of the school year you were really quite. I did not think I would be able to get closer to you. It is great to hang out with you with Wassim and the others. You guys were my lalag group. I am also surprised at your performance skill like in reporting, acting, and energy You have talent I can guarantee you that. I wish you luck in this school year.";
+                        break;
+                        case "Hymen": secretMessage = 
+                        "What up bro? This your first time to be in a game? I'll be honest had no Idea what your hero should be. I do not know how I should use your power in fighting so I made you into a smart wizard with very strong memory.\n\nI always thought you were a very serious and smart person ever since I saw your introduction and up until now you live up to my expectations but not entirely because I did not knew you had a masamok and Emmel side. I want to thank you for helping during classes. Your character is a pretty accurate depiction of you minus the beard. I had fun walking with you and with the others like Wassim Home and to school. All the times we got maize and bread I will never forget. I hope we get to be in the same section this school year I think we will be Tirmidhi trust.";
+                        break;
+                        case "Amlan": secretMessage = 
+                        "Ko most Tah ka Amlan? Your super power is super senses and I made your hero very strong .\n\nI want to say thank you for helping me whenever I need help. I had a great time hanging with you. I hope we'll be classmates and I wish you a good school year.";
+                        break;
+                        case "Lil Nas": secretMessage = 
+                        "U like ur hero? I gave him mastery of time management.\n\nI want to thank you for giving me rides home. I am lucky we go to the same route. Working with you in activities and groupings was fun almost all the time we are in the same group. Hope you can bow wee this school year because you were always late and absent. You live really really far away from AKIC and very busy with family and I hope your pussy is doing well at home because when we first saw it it looked really cooked. I am encouraging you to push on in this school year and I hope we become classmates. Even if we are in different sections you can ask me for help.";
+                        break;
+                        case "Eren Doug": secretMessage = 
+                        "What do you think of your hero and name? Hope you can use those powers to come visit us.\n\nEren Doug the time when you introduced yourself something about ow ow and meow meow that made me shitting laughing and up until now thinking of it makes me laugh. You are a funny guy to be around. I can still remember our activity in Gen Math even if we got confused you still made it fun to do. And in times when we were practicing Zumba and Theatrical I cannot get your moments out of my mind. Sure it might have disturbed our practice but it made everything 10 times fun doing. I hope you are fitting well in Melee Gun City and I hope u made friends there. It was very unfortunate you had to be exiled. I never expected what happened to you would happen it was crazy I think it is the first time knowing someone I know fell victim to it. I also hope you are in any danger or anything and your family is doing well . There were times when told each other \"Man imagine if Eren Doug was here\" we never forgotten about u bro. U still part of the QAYYIM BOIS 1st sem, 2nd sem, and so on";
+                        break;
+                        case "Akhil": secretMessage = 
+                        "Greeting Gym bro did you enjoyed your guy? I'll be honest ur guy looks🔥 Use your powers wisely and I with you ending period cramps 🩸\n\nWhen we first saw you we talked about how Jacked you were You had a great fit. This made some of us started lifting and exercising so you kinda became a role model for us. The time when we went to the gym that was my very first time. it was a great experience I have lifted and exercised at home but we did not have any of those equipment so it was a great experience using those. Maintaining ur build must be really hard. I even heard from the other bois you were not very fit back then but now you basically had a glow up so I want to give you my respect for your dedication. You got the 🧠and the 💪 because you are really smart solving problems the class could not answer. You Aura farmed. I also wish you luck in your 💘 I am rooting for you guys.";
+                        break;
+                        case "Wassim": secretMessage = 
+                        "Yo wat up bro this what I mean if u r sure u wanna have the same power as Eren Doug\n\nwe have known each other since elementary I can still remember the when we played G-switch in your room our brothers were classmates so we hang out more but when the Pandemic started we all got separated I had to transfer because AKIC was too difficult I struggled in grades back then ngl my exams were low and I will be Honest I had never been in an Honors Program that time. So during the pandemic and high school I started to actually care. but when I returned in AKIC none of U guys were there but the ones that was there we no longer hung out. In senior high I would never thought we would be classmates because you were in a different school aiming for a different school and being in the same section is crazy this just means you worked hard to get in this section. I was so glad U R here because U always helped me and joined me. You also brought us BOIS closer together because of hospitality of your family. Thanks so much for letting us hang out there I will be honest I almost never hang out at my friends' houses so the first time U invited me I was nervous. And do not worry bro U WILL ARISE this school year I am praying we become classmates again because U R my closest friend. Even if we are in different section u still my homie.";
+                        break;
+                        case "Basalt": secretMessage = 
+                        "I love ur super power so I made it powerful so you can torture the enemies.\n\nI had so much fun hanging with you bro. U Zhadid, Hymen, and Wassim are my bros of lakad Home and school. I also wish you good luck in your badminton plays. If you ever have thought of playing nationals just tell me I will support U. I believe in you practice work hard and DISCIPLINE. perhaps we may not be in the same section but I am hoping we r the same but still u will always be QAYYIM BOI."; 
+                        break;
+                        case "G-man": secretMessage = 
+                        "guess what the G stand for? \n\nI can still remember the time when I handed you a 1/4 in the first day. I hope you had a great time in our section. Even if you are not used to our language I hope you had an easy time understanding us. I also want to say you are a great singer and a guitarist. I wish u luck in MAC donalds. Even if we won't be in the same section I'll be cheering U on. and the G stands for Good Man a Good Friend"; 
+                        break;
+                        case "Pow-pau": secretMessage = 
+                        "Hello Pow-pau I did not watch the Zoltraak anime so I did my best researching about your power\n\nI know ever since in our junior high year we were not really close but now we have gotten closer due to our Bois. We AKIC sat together in the first row and thanks for letting me sit with U guys because U were the only people I know at that time. I started to know you better thanks to our section. I also want to thank you for leading us from previous years up until now. The truth is I want to get closer to you and the other AKIC but I felt like there was a barrier that formed between us so I would always stay quiet around U guys. Don't think that I don't like U guys I want to know U all more because even knowing you all for 3 years I am more closer to our new classmates. I also wish U luck in SQUAAA dddd and definitely U will be placed in the first section and Hope we can be classmates again."; 
+                        break;
+                        default:
+                            secretMessage = "That individual holds no secrets here...";
+                    }
+                    
+                    alert(secretMessage);
+                }
+            }
+            else {
+                alert("Syntax Error: Unknown command.");
+            }
+        }
+
+        function claimGold() { player.gold += 10; updateUI(); }
+        function claimExp() { addExp(50); }
+        function restAtHome() { player.hp = player.maxHp; player.mp = player.maxMp; updateUI(); alert("HP and MP Restored!"); }
+        function closeSubMenu() { document.getElementById('sub-menu').style.display = 'none'; clearInterval(liftInterval); }
+        function closePopup() { document.getElementById('popup').style.display = 'none'; }
+        function flee() {
+            // 1. Roll for success (50% chance)
+            if (Math.random() < 0.5) {
+                alert("You escaped safely!");
+                endFight();
+            } else {
+                // 2. Flee failed: Enemy attacks
+                alert("Flee failed! The enemy blocks your path and attacks!");
+                
+                // Calculate enemy damage (assuming your dmg is an array [min, max])
+                let damage = Math.floor(Math.random() * (enemy.dmg[1] - enemy.dmg[0] + 1)) + enemy.dmg[0];
+                
+                // Apply damage to player
+                player.hp -= damage;
+                
+                // Log the failure
+                const log = document.getElementById('combat-log');
+                if (log) {
+                    log.innerHTML += `<div style="color:red">Failed to flee! ${enemy.name} dealt ${damage} damage!</div>`;
+                }
+                
+                // Update the UI and check if player died from the flee attempt
+                updateUI();
+                if (player.hp <= 0) {
+                    alert("You were struck down while trying to run...");
+                    location.reload(); // Or your game over logic
+                }
+            }
+        }
+        function updateEnemyBar() { document.getElementById('enemy-hp-fill').style.width = (enemy.hp / enemy.maxHp * 100) + "%"; }
+        function transitionToCutscene() {
+            // 1. Switch from Hero Selection to the Travel/Loading Screen
+            document.getElementById('selection-screen').classList.remove('active');
+            const travelScreen = document.getElementById('travel-screen');
+            travelScreen.classList.add('active');
+
+            // 2. Setup the loading elements
+            const loadingFill = document.getElementById('loading-fill');
+            const pressStart = document.getElementById('press-start');
+            const travelText = document.getElementById('travel-text');
+
+            loadingFill.style.width = "0%";
+            pressStart.style.display = "none";
+            travelText.innerText = "INITIALIZING BOI DATA...";
+
+            // 3. Start the Loading Bar Animation
+            let progress = 0;
+            const interval = setInterval(() => {
+                progress += Math.random() * 15; // Random loading speed
+                if (progress > 100) progress = 100;
+                
+                loadingFill.style.width = progress + "%";
+
+                if (progress >= 100) {
+                    clearInterval(interval);
+                    travelText.innerText = "READY TO RISE";
+                    pressStart.style.display = "block"; // Show the blinking text
+                    
+                    // 4. Wait for the player to press a key or click to actually start
+                    const handleInitialStart = () => {
+                        window.removeEventListener('keydown', handleInitialStart);
+                        window.removeEventListener('click', handleInitialStart);
+                        startGame(); // Finally move to the game screen
+                    };
+
+                    window.addEventListener('keydown', handleInitialStart);
+                    window.addEventListener('click', handleInitialStart);
+                }
+            }, 200);
+        }
+
+        function startGame() {
+            // 1. Transition to the main Game Screen
+            document.getElementById('travel-screen').classList.remove('active');
+            document.getElementById('game-screen').classList.add('active');
+            
+            // 2. Initialize the UI with player data
+            document.getElementById('ui-name').innerText = player.name;
+            document.getElementById('location-text').innerText = "Alley Way Central";
+            
+            updateUI();
+        }
+    </script>
+</body>
+</html>
