@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>QAYYIM QUEST: RISE OF THE BOIS!</title>
     <style>
         /* =========================================
@@ -18,12 +18,53 @@
             --exp-color: #ba55d3;
         }
 
-        body { background-color: var(--bg); color: var(--text); font-family: 'Segoe UI', sans-serif; margin: 0; overflow: hidden; }
+        body { 
+            background-color: var(--bg); 
+            color: var(--text); 
+            font-family: 'Segoe UI', sans-serif; 
+            margin: 0; 
+            
+            /* FIX FOR MOBILE SCALING */
+            height: 100vh;           /* Force body to be exactly the height of the phone screen */
+            width: 100vw;            /* Force body to be exactly the width of the phone screen */
+            display: flex;           /* Enables flexbox layout */
+            flex-direction: column;  /* Stacks top-bar, main-content, and nav vertically */
+            overflow: hidden;        /* Prevents accidental scrolling/bouncing on mobile */
+            
+            /* BACKGROUND OPTIMIZATION */
+            background-size: cover;  /* Ensures background image covers the whole screen without stretching */
+            background-position: center; 
+            background-attachment: fixed;
+        }
 
         /* =========================================
            SCREEN & LAYOUT CONTAINERS
            ========================================= */
-        .screen { display: none; width: 100vw; height: 100vh; flex-direction: column; align-items: center; justify-content: center; background-size: cover; background-position: center; }
+        .screen { 
+            display: none; 
+            /* Ensures the screen takes up exactly the available space */
+            width: 100%; 
+            height: 100%; 
+            
+            /* Flexbox to center your game content (Characters, Monsters, etc.) */
+            flex-direction: column; 
+            align-items: center; 
+            justify-content: center; 
+            
+            /* Background scaling fix */
+            background-size: cover; 
+            background-position: center; 
+            background-repeat: no-repeat;
+            
+            /* Extra protection against scrolling */
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* Ensure that when a screen is active, it uses flex layout */
+        .screen.active { 
+            display: flex; 
+        }
         .active { display: flex; }
 
         .hero-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; padding: 20px; max-height: 80vh; overflow-y: auto; }
@@ -87,7 +128,36 @@
         .hp-bar-container { width: 100%; height: 10px; background: #333; margin-bottom: 5px; border: 1px solid #000; }
         .hp-fill { height: 100%; background: var(--hp-color); transition: width 0.3s; }
         .stat-val { color: var(--gold); font-weight: bold; }
-        .nav-btn { padding: 10px 15px; cursor: pointer; background: #333; color: white; border: 1px solid var(--gold); }
+        .nav-btn { 
+            /* Increase padding: 15px top/bottom makes it easier to tap on mobile */
+            padding: 15px 10px; 
+            
+            /* Allow buttons to grow and fill the bottom bar evenly */
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+
+            cursor: pointer; 
+            background: #333; 
+            color: white; 
+            border: 1px solid var(--gold); 
+            font-size: 14px; 
+            font-weight: bold;
+            text-transform: uppercase;
+            transition: background 0.2s;
+            
+            /* Prevent text from touching the edges of the button */
+            min-width: 0; 
+            margin: 2px;
+        }
+
+        /* Add a hover/active state for better feedback when tapped */
+        .nav-btn:active {
+            background: var(--gold);
+            color: black;
+        }
         .nav-btn:disabled { opacity: 0.3; border-color: #555; cursor: not-allowed; }
 
         #combat-log { background: rgba(0,0,0,0.8); padding: 10px; border: 1px solid var(--gold); width: 220px; height: 80px; font-size: 12px; overflow-y: auto; }
@@ -121,41 +191,49 @@
 <body>
 
     <div id="selection-screen" class="screen active">
-        <div style="text-align: center; margin-bottom: 30px;">
-            <h1 style="font-size: 3.5rem; color: var(--gold); text-shadow: 3px 3px #000; margin: 0; letter-spacing: 2px;">
-                QAYYIM QUEST: RISE OF THE BOIS
-            </h1>
-            <h2 style="font-size: 1.5rem; color: #aaa; margin-top: 5px; text-transform: uppercase; letter-spacing: 4px;">
-                Select Your Hero
-            </h2>
+            <div style="text-align: center; margin-bottom: 30px;">
+                <h1 style="font-size: 3.5rem; color: var(--gold); text-shadow: 3px 3px #000; margin: 0; letter-spacing: 2px;">
+                    QAYYIM QUEST: RISE OF THE BOIS
+                </h1>
+                <h2 style="font-size: 1.5rem; color: #aaa; margin-top: 5px; text-transform: uppercase; letter-spacing: 4px;">
+                    Select Your Hero
+                </h2>
+            </div>
+            <div class="hero-grid" id="hero-grid"></div>
         </div>
-        <div class="hero-grid" id="hero-grid"></div>
-    </div>
 
-    <div id="popup" class="modal">
-        <h2 id="pop-name">Hero</h2>
-            <div class="pop-hero-img" id="pop-img"></div>
-                <p id="pop-desc" style="font-size: 14px; color: #bbb; padding: 0 10px;"></p>
-            <div id="pop-abilities" class="ability-preview-box">
+        <div id="popup" class="modal">
+            <h2 id="pop-name">Hero</h2>
+                <div class="pop-hero-img" id="pop-img"></div>
+                    <p id="pop-desc" style="font-size: 14px; color: #bbb; padding: 0 10px;"></p>
+                <div id="pop-abilities" class="ability-preview-box">
+            </div>
         </div>
-    </div>
 
-    <div id="sub-menu" class="modal">
+        <div id="sub-menu" class="modal">
         <h2 id="menu-title">Menu</h2>
         <p id="menu-desc">Select an option</p>
         <div id="menu-content"></div>
+
+        <button id="menu-confirm-btn" class="nav-btn" style="display:none; width: 100%; margin-top: 15px; background: var(--gold); color: black; font-weight: bold; border: 2px solid white;">
+            CONFIRM SELECTION
+        </button>
+
         <div id="gym-ui" style="display:none;">
             <p id="gym-stats"></p>
             <div id="gym-timer"></div>
             <button id="lift-btn" onclick="registerLift()">LIFT</button>
         </div>
+
         <div id="quiz-ui" style="display:none;">
             <p id="quiz-question" style="font-weight:bold; margin-bottom:15px;"></p>
             <div id="quiz-options"></div>
         </div>
+
         <button id="gold-claim-btn" class="claim-btn" style="background:var(--gold);" onclick="claimGold()">+10 GOLD</button>
         <button id="exp-claim-btn" class="claim-btn" style="background:var(--exp-color); color: white;" onclick="claimExp()">+50 EXP</button>
         <button id="rest-btn" class="claim-btn" style="background:var(--mp-color); color: white;" onclick="restAtHome()">REST (Heal HP/MP)</button>
+        
         <button onclick="closeSubMenu()" style="margin-top:10px;">Close</button>
     </div>
 
@@ -196,10 +274,18 @@
             </div>
         </div>
 
+        <div id="battle-confirm-ui" style="display:none; text-align:center; padding: 10px; background: rgba(0,0,0,0.9); border: 1px solid var(--gold); margin-bottom: 5px;">
+            <p id="battle-preview-text" style="margin: 0 0 5px 0; font-size: 13px; color: var(--gold);"></p>
+            <button id="battle-confirm-btn" class="nav-btn" style="width: 100%; background: var(--gold); color: black; font-weight: bold;">
+                CONFIRM ABILITY
+            </button>
+        </div>
+
         <div class="bottom-bar" id="standard-nav">
             <button class="nav-btn" onclick="openExplore()">Explore</button>
             <button class="nav-btn" onclick="openMap()">Map</button>
             <button class="nav-btn" onclick="openItems()">Items</button>
+            <button class="nav-btn" onclick="openDevConsole()">Console</button>
         </div>
 
         <div class="bottom-bar" id="combat-nav" style="display:none;">
@@ -227,7 +313,7 @@
                 scaling: { 2: { mp: 15 }, 3: { hp: 10, ab2: true }, 4: { dmgBonus: 5 }, 5: { hp: 10, mp: 10, ab3: true } }
             },
             "Rah Jay": {
-                description: "A time manipulator sorcerer who was driven out of chronosphere trying to acquire peace in Melee Gun City. Specializes in halting the flow of time around him.",
+                description: "A time manipulator sorcerer from More Ant Town. Uses time manipulation to transfer locations and explored several cities and schoole around the map.",
                 hp: 100, mp: 105,
                 abilities: [
                     { id: 1, name: "Chronostrike", cost: 15, type: "dmg", val: [15, 15], desc: "Stops time briefly to strike. Deals 15 dmg. Cost: 15 MP" },
@@ -287,7 +373,7 @@
                 scaling: { 2: { mp: 10 }, 3: { hp: 5, ab2: true }, 4: { dmgBonus: 5 }, 5: { hp: 5, mp: 5, ab3: true } }
             },
             "Eren Doug": {
-                description: "An exiled time manipulator from Miligun. Moves between the flow of time.",
+                description: "A time manipulator sorcerer who was driven out of chronosphere trying to acquire peace in Melee Gun City. Specializes in halting the flow of time around him.",
                 hp: 100, mp: 105,
                 abilities: [
                     { id: 1, name: "Chronostrike", cost: 15, type: "dmg", val: [15, 15], desc: "Stops time briefly to strike. Deals 15 dmg. Cost: 15 MP" },
@@ -562,48 +648,13 @@
             quests.q1.status = "available";
         });
 
-                // Listen for the Enter key globally
-        document.addEventListener('keydown', function(e) {
-            // Only trigger if the Enter key is pressed
-            let goldTapCount = 0;
-            let goldTapTimer;
-
-            // Central function to open the console
-            function openDevConsole() { 
-                const input = prompt("DEVELOPER CONSOLE: Enter command (e.g., !getItem Old boot 3)");
+        //Command Console 
+        function openDevConsole() { 
+                const input = prompt("");
                 if (input !== null) {
                     processCommand(input.trim());
                 }
             }
-
-            // Mobile/Mouse: 7-Tap Trigger on the Gold Display
-            // This adds the listener to the Gold container in the UI
-            document.addEventListener('DOMContentLoaded', () => {
-                const goldDisplay = document.getElementById('ui-gold').parentElement;
-                goldDisplay.style.cursor = "pointer"; // Visual cue for PC users
-
-                goldDisplay.addEventListener('click', () => {
-                    goldTapCount++;
-                    clearTimeout(goldTapTimer);
-                    
-                    // Reset count if user stops tapping for 1.5 seconds
-                    goldTapTimer = setTimeout(() => { goldTapCount = 0; }, 1500);
-
-                    if (goldTapCount === 7) {
-                        goldTapCount = 0;
-                        openDevConsole();
-                    }
-                });
-            });
-
-            // PC: Tab Key Trigger
-            window.addEventListener('keydown', (e) => {
-                if (e.key === 'Tab') {
-                    e.preventDefault();
-                    openDevConsole();
-                }
-            });
-        });
 
         /* =========================================
            HERO PREVIEW & SELECTION
@@ -1036,58 +1087,82 @@
         function openExplore() { renderMenu("Explore", ["Alley Way Central", "The Fugging Kingdom"]); }
 
         function renderMenu(title, options) {
-                const content = document.getElementById('menu-content');
-                content.innerHTML = "";
-                document.getElementById('menu-title').innerText = title;
-                document.getElementById('menu-desc').innerText = "Select an option";
-                
-                // Hide UI elements as per your existing code
-                document.getElementById('gold-claim-btn').style.display = "none";
-                document.getElementById('exp-claim-btn').style.display = "none";
-                document.getElementById('rest-btn').style.display = "none";
-                document.getElementById('gym-ui').style.display = "none";
-                document.getElementById('quiz-ui').style.display = "none";
+            const content = document.getElementById('menu-content');
+            const confirmBtn = document.getElementById('menu-confirm-btn');
+            const descText = document.getElementById('menu-desc');
+            
+            content.innerHTML = "";
+            confirmBtn.style.display = "none"; // Always hide confirm at start
+            document.getElementById('menu-title').innerText = title;
+            descText.innerText = "Select an option";
+
+            // Hide all secondary UI elements
+            const extraUI = ['gold-claim-btn', 'exp-claim-btn', 'rest-btn', 'gym-ui', 'quiz-ui'];
+            extraUI.forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.style.display = "none";
+            });
 
             options.forEach(name => {
                 const item = document.createElement('div');
                 item.className = "menu-item";
                 item.innerText = name;
-                
-                let menuTimer = null;
-                item.onclick = () => {
-                    if (menuTimer === null) {
-                        // FIRST CLICK: Display Description
-                        menuTimer = setTimeout(() => {
-                            if (title === "Map") {
-                                document.getElementById('menu-desc').innerText = mapLocations[name] || "Description unknown.";
-                            } 
-                            // Added: Check for Alley Way Central in the Explore menu
-                            else if (title === "Explore" && name === "Alley Way Central") {
-                                document.getElementById('menu-desc').innerText = "The common grounds of poverty overrun by thieving peasants stealing anything that has value including lives.";
-                            }
-                            else if (title === "Explore" && name === "The Fugging Kingdom") {
-                                document.getElementById('menu-desc').innerText = "Once a peaceful and prosperous Kingdom fallen due to the Fugging Invasion exiling and forcing many outside the kingdom.";
-                            }
-                            menuTimer = null;
-                        }, 250);
-                    } else {
-                        // SECOND CLICK (Double Click): Execute Action
-                        clearTimeout(menuTimer); 
-                        menuTimer = null;
 
-                        if (name === "Sir DIY's Tavern") openTavern();
-                        else if (name === "GYM") openGym();
-                        else if (name === "AKIC") openSchool();
-                        // Ensure this name matches exactly as written in openExplore()
-                        else if (name === "Alley Way Central") { currentLocation = "Alley Way Central"; triggerExplorationEvent();} 
-                        else if (name === "The Fugging Kingdom") {  currentLocation = "The Fugging Kingdom";triggerExplorationEvent();}
-                        else if (name === "Home") travelTo("Home");
-                        else travelTo(name);
+                item.onclick = () => {
+                    // 1. Visual Highlight (Hero selection style)
+                    document.querySelectorAll('.menu-item').forEach(i => {
+                        i.style.border = "1px solid rgba(255,215,0,0.2)";
+                        i.style.background = "rgba(255,255,255,0.05)";
+                    });
+                    item.style.border = "2px solid var(--gold)";
+                    item.style.background = "rgba(255,215,0,0.1)";
+
+                    // 2. Update Descriptions based on location
+                    if (title === "Map") {
+                        const mapLocs = {
+                            "Home": "Return to your safe house to rest.",
+                            "Sir DIY's Tavern": "A place to drink, hear rumors, and find work.",
+                            "GYM": "Pay gold to increase your physical capabilities.",
+                            "AKIC": "The local learning center for aspiring scholars."
+                        };
+                        descText.innerText = mapLocs[name] || "A travel destination.";
+                    } else if (title === "Explore") {
+                        if (name === "Alley Way Central") descText.innerText = "Slums overrun by thieving peasants.";
+                        else if (name === "The Fugging Kingdom") descText.innerText = "A fallen kingdom now under invasion.";
                     }
+
+                    // 3. Setup the Confirm Button
+                    confirmBtn.style.display = "block";
+                    confirmBtn.innerText = `GO TO ${name.toUpperCase()}`;
+                    
+                    confirmBtn.onclick = () => {
+                        confirmBtn.style.display = "none";
+                        executeMenuAction(name);
+                    };
                 };
                 content.appendChild(item);
             });
+
             document.getElementById('sub-menu').style.display = 'block';
+        }
+
+        // Logic to actually move the player
+        function executeMenuAction(name) {
+            if (name === "Sir DIY's Tavern") openTavern();
+            else if (name === "GYM") openGym();
+            else if (name === "AKIC") openSchool();
+            else if (name === "Alley Way Central") { 
+                currentLocation = "Alley Way Central"; 
+                triggerExplorationEvent();
+                closeSubMenu(); 
+            } 
+            else if (name === "The Fugging Kingdom") { 
+                currentLocation = "The Fugging Kingdom"; 
+                triggerExplorationEvent();
+                closeSubMenu();
+            }
+            else if (name === "Home") travelTo("Home");
+            else travelTo(name);
         }
 
         /* =========================================
@@ -1352,58 +1427,75 @@
         }
 
         /* =========================================
-           TAVERN & QUESTS
-           ========================================= */
+        TAVERN & QUESTS (CONFIRM BUTTON VERSION)
+        ========================================= */
         function openTavern() {
-    document.getElementById('menu-title').innerText = "Sir DIY's Tavern";
-    
-    // REMOVED THE FREE CLAIM BUTTONS HERE
-    document.getElementById('gold-claim-btn').style.display = "none";
-    document.getElementById('exp-claim-btn').style.display = "none";
-    
-    const content = document.getElementById('menu-content');
-    content.innerHTML = "";
+            document.getElementById('menu-title').innerText = "Sir DIY's Tavern";
+            
+            // UI Cleanup
+            document.getElementById('gold-claim-btn').style.display = "none";
+            document.getElementById('exp-claim-btn').style.display = "none";
+            document.getElementById('rest-btn').style.display = "none";
 
-    const tavernDesc = document.createElement('div');
-    tavernDesc.id = "shop-description"; 
-    tavernDesc.style = "padding:10px; margin-bottom:10px; border:1px solid var(--gold); background:#000; min-height:50px;";
-    tavernDesc.innerHTML = "<small>Select an NPC to talk to them...</small>";
-    content.appendChild(tavernDesc);
+            const content = document.getElementById('menu-content');
+            const confirmBtn = document.getElementById('menu-confirm-btn');
+            content.innerHTML = "";
+            confirmBtn.style.display = "none"; // Hide confirm initially
 
-    // Ensure these names match the "if" checks below
-    ["Grinder", "RackVille"].forEach(opt => {
-        const btn = document.createElement('div');
-        btn.className = "menu-item";
-        btn.innerText = opt;
+            // 1. Create the NPC Dialogue Box
+            const tavernDesc = document.createElement('div');
+            tavernDesc.id = "shop-description"; 
+            tavernDesc.style = "padding:10px; margin-bottom:10px; border:1px solid var(--gold); background:#000; min-height:50px; font-size: 14px;";
+            tavernDesc.innerHTML = "<small>Select an NPC to talk to them...</small>";
+            content.appendChild(tavernDesc);
 
-        if (opt === "Grinder") {
-            btn.onclick = () => {
-                document.getElementById('shop-description').innerHTML = `<strong>Grinder</strong>: <br>"Hello there hero... I offer Grinding Quests!"`;
-                highlightNPC(btn);
-            };
-            btn.ondblclick = () => { openGrinder(); };
-        } 
-        else if (opt === "Jack") {
-            btn.onclick = () => {
-                document.getElementById('shop-description').innerHTML = 
-                    `<strong>Jack</strong>: <br>"Greetings Fallen Boi. I am Jack. I shall aid you in your Journey to seek the end of this game."`;
-                highlightNPC(btn);
-            };
-            btn.ondblclick = () => { openJackQuests(); };
+            // 2. Define our NPCs and their actions
+            const npcs = [
+                { 
+                    name: "Grinder", 
+                    dialogue: "<strong>Grinder</strong>: <br>'Hello there hero... I offer Grinding Quests!'",
+                    action: () => openGrinder() 
+                },
+                { 
+                    name: "RackVille", 
+                    dialogue: "<strong>RackVille</strong>: <br>'Hot spot for feasts, essentials, and merchants.'",
+                    action: () => openShop() 
+                }
+            ];
+
+            // 3. Generate the buttons
+            npcs.forEach(npc => {
+                const btn = document.createElement('div');
+                btn.className = "menu-item";
+                btn.innerText = npc.name;
+
+                btn.onclick = () => {
+                    // Visual feedback (Highlighting)
+                    document.querySelectorAll('.menu-item').forEach(i => {
+                        i.style.border = "1px solid rgba(255,215,0,0.2)";
+                        i.style.background = "rgba(255,255,255,0.05)";
+                    });
+                    btn.style.border = "2px solid var(--gold)";
+                    btn.style.background = "rgba(255,215,0,0.1)";
+
+                    // Show Dialogue
+                    document.getElementById('shop-description').innerHTML = npc.dialogue;
+
+                    // Setup Confirm Button
+                    confirmBtn.style.display = "block";
+                    confirmBtn.innerText = `TALK TO ${npc.name.toUpperCase()}`;
+                    
+                    confirmBtn.onclick = () => {
+                        confirmBtn.style.display = "none";
+                        npc.action();
+                    };
+                };
+
+                content.appendChild(btn);
+            });
+            
+            document.getElementById('sub-menu').style.display = 'block';
         }
-        else if (opt === "RackVille") {
-            btn.onclick = () => {
-                document.getElementById('shop-description').innerHTML = `<strong>RackVille</strong>: <br>"Hot spot for feasts, essentials, and merchants."`;
-                highlightNPC(btn);
-            };
-            btn.ondblclick = () => { openShop(); };
-        }
-
-        content.appendChild(btn);
-    });
-    
-    document.getElementById('sub-menu').style.display = 'block';
-}
         
 
 // Helper function to handle visual feedback
@@ -1451,18 +1543,39 @@ function highlightNPC(btnElement) {
            COMBAT ENGINE & ABILITY LOGIC
            ========================================= */
         function setupCombatButtons() {
+            const confirmUI = document.getElementById('battle-confirm-ui');
+            const previewText = document.getElementById('battle-preview-text');
+            const confirmBtn = document.getElementById('battle-confirm-btn');
+
             [1, 2, 3].forEach(num => {
                 const btn = document.getElementById(`atk-${num}`);
-                let abTimer = null;
+                
                 btn.onclick = () => {
                     if (!isPlayerTurn) return;
-                    const ab = player.selectedHero.abilities[num-1];
-                    if (abTimer === null) {
-                        abTimer = setTimeout(() => { document.getElementById('combat-log').innerText = ab.desc; abTimer = null; }, 250);
-                    } else {
-                        clearTimeout(abTimer); abTimer = null;
-                        executeAbility(ab);
+
+                    const ab = player.selectedHero.abilities[num - 1];
+
+                    // 1. Check for MP requirements
+                    if (player.mp < ab.cost) {
+                        document.getElementById('combat-log').innerText = "Not enough MP!";
+                        return;
                     }
+
+                    // 2. Visual Highlight: Show which button is selected
+                    document.querySelectorAll('.atk-btn').forEach(b => b.style.borderColor = "rgba(255,255,255,0.3)");
+                    btn.style.borderColor = "var(--gold)";
+
+                    // 3. Show Ability Info in the Log
+                    document.getElementById('combat-log').innerText = ab.desc;
+
+                    // 4. Setup the Confirm Button
+                    confirmUI.style.display = "block";
+                    previewText.innerText = `Use ${ab.name}? (${ab.cost} MP)`;
+
+                    confirmBtn.onclick = () => {
+                        confirmUI.style.display = "none";
+                        executeAbility(ab); // Call your logic to deal damage
+                    };
                 };
             });
         }
@@ -1791,6 +1904,7 @@ function highlightNPC(btnElement) {
            ========================================= */
         function openItems() {
             document.getElementById('menu-title').innerText = "Inventory";
+            document.getElementById('menu-desc').innerText = "";
             const content = document.getElementById('menu-content');
             content.innerHTML = "";
             document.getElementById('rest-btn').style.display = "none";
@@ -2100,6 +2214,27 @@ function highlightNPC(btnElement) {
                     
                     alert(secretMessage);
                 }
+            }
+            // --- NEW !getXp COMMAND ---
+            else if (command === "!getxp") {
+                if (args.length < 2) {
+                    alert("Syntax Error: Use !getXp [amount]");
+                    return;
+                }
+
+                const amount = parseInt(args[1]);
+
+                if (isNaN(amount) || amount <= 0) {
+                    alert("Syntax Error: Amount must be a valid number.");
+                    return;
+                }
+
+                // Add the XP to the player object
+                player.exp += amount;
+                alert(`Successfully added ${amount} XP.`);
+                
+                // Refresh the UI bars and stats
+                updateUI();
             }
             else {
                 alert("Syntax Error: Unknown command.");
