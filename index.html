@@ -2004,6 +2004,9 @@ function highlightNPC(btnElement) {
             buyHeader.innerText = "Items to Buy";
             content.appendChild(buyHeader);
 
+            // Track the currently selected item globally or within the function scope
+            let selectedShopItem = null;
+
             const buyItems = [
                 { name: "HP Potion", cost: 10, desc: "Restores 100 Health Points." }, 
                 { name: "MP Potion", cost: 10, desc: "Restores 100 Mana Points." }, 
@@ -2017,7 +2020,6 @@ function highlightNPC(btnElement) {
                 const btn = document.createElement('div');
                 btn.className = "menu-item"; 
                 
-                // --- SOLD OUT CHECK ---
                 const isOwned = inventory[g.name] > 0;
                 if (g.isUnique && isOwned) {
                     btn.innerText = `${g.name} - SOLD OUT`;
@@ -2028,44 +2030,39 @@ function highlightNPC(btnElement) {
                     btn.innerText = `${g.name} (${g.cost}g)`;
                 }
 
-                // Click to see the description you provided
+                // CLICK TO SELECT
                 btn.onclick = () => {
-                    document.getElementById('shop-description').innerHTML = 
-                        `<strong>${g.name}</strong>: ${g.desc} <br> <span style="color:var(--gold)">Price: ${g.cost}g</span>`;
+                    if (g.isUnique && isOwned) return;
+
+                    // Visual Feedback: Clear other borders, highlight this one
                     document.querySelectorAll('.menu-item').forEach(el => el.style.borderColor = "");
                     btn.style.borderColor = "var(--gold)";
-                };
 
-                // Double click to buy
-                btn.ondblclick = () => {
-                    if (g.isUnique && isOwned) return; // Prevent buying sold out items
+                    // Update Description Box
+                    document.getElementById('shop-description').innerHTML = 
+                        `<strong>${g.name}</strong>: ${g.desc} <br> <span style="color:var(--gold)">Price: ${g.cost}g</span>`;
 
-                    if (player.gold >= g.cost) {
-                        player.gold -= g.cost;
-                        inventory[g.name] = (inventory[g.name] || 0) + 1;
+                    // Update Global Selection and Show Confirm Button
+                    selectedShopItem = g;
+                    const confirmBtn = document.getElementById('menu-confirm-btn');
+                    confirmBtn.style.display = "block";
+                    confirmBtn.innerText = `BUY ${g.name.toUpperCase()}`;
+                    
+                    confirmBtn.onclick = () => {
+                        if (player.gold >= selectedShopItem.cost) {
+                            player.gold -= selectedShopItem.cost;
+                            inventory[selectedShopItem.name] = (inventory[selectedShopItem.name] || 0) + 1;
 
-                        // --- SPECIFIC ITEM MESSAGES ---
-                        if (g.name === "Rubik's Cube") {
-                            alert(`Purchased ${g.name}! Your Max MP has increased by 15.`);
-                        } 
-                        else if (g.name === "Zumba Video") {
-                            alert(`Purchased ${g.name}! Your Max HP has increased by 20.`);
-                        } 
-                        else if (g.name === "Baston") {
-                            alert(`Purchased ${g.name}! Your Attack Damage has increased by 15.`);
+                            alert(`Purchased ${selectedShopItem.name}!`);
+                            
+                            updateUI(); 
+                            openShop(); // Refresh shop state
+                            confirmBtn.style.display = "none"; 
+                        } else {
+                            alert("Not enough gold!");
                         }
-                        else {
-                            // Default message for potions or other items
-                            alert(`Purchased ${g.name}!`);
-                        }
-
-                        updateUI(); // Applies the stat bonus dynamically
-                        openShop(); // Refresh to show "SOLD OUT"
-                    } else {
-                        alert("Not enough gold!");
-                    }
+                    };
                 };
-
                 content.appendChild(btn);
             });
 
@@ -2216,26 +2213,52 @@ function highlightNPC(btnElement) {
                 }
             }
             // --- NEW !getXp COMMAND ---
-            else if (command === "!getxp") {
-                if (args.length < 2) {
-                    alert("Syntax Error: Use !getXp [amount]");
-                    return;
-                }
-
-                const amount = parseInt(args[1]);
-
-                if (isNaN(amount) || amount <= 0) {
-                    alert("Syntax Error: Amount must be a valid number.");
-                    return;
-                }
-
-                // Add the XP to the player object
-                player.exp += amount;
-                alert(`Successfully added ${amount} XP.`);
-                
-                // Refresh the UI bars and stats
-                updateUI();
+        else if (command === "!getxp") {
+            if (args.length < 2) {
+                alert("Syntax Error: Use !getXp [amount]");
+                return;
             }
+
+            const amount = parseInt(args[1]);
+
+            if (isNaN(amount) || amount <= 0) {
+                alert("Syntax Error: Amount must be a valid number.");
+                return;
+            }
+
+            // Add the XP using your existing function to handle level-ups
+            addExp(amount); 
+            
+            alert(`Successfully added ${amount} XP.`);
+            
+            // Refresh the UI bars and stats
+            updateUI();
+        }
+
+        // --- NEW !getGold COMMAND ---
+        else if (command === "!getgold") {
+            // Check if the user provided an amount
+            if (args.length < 2) {
+                alert("Syntax Error: Use !getGold [amount]");
+                return;
+            }
+
+            const amount = parseInt(args[1]);
+
+            // Validate that the input is a positive number
+            if (isNaN(amount) || amount <= 0) {
+                alert("Syntax Error: Please enter a valid number of gold.");
+                return;
+            }
+
+            // Update the player's gold variable
+            player.gold += amount; 
+            
+            // Refresh the UI so the new gold total appears on screen
+            updateUI(); 
+            
+            alert(`Added ${amount} gold. Total gold: ${player.gold}`);
+        }
             else {
                 alert("Syntax Error: Unknown command.");
             }
