@@ -2131,6 +2131,9 @@ function highlightNPC(btnElement) {
             const args = input.split(" ");
             const command = args[0].toLowerCase();
 
+            let processedCommand = command.toLowerCase().trim();
+
+
             if (command === "!getitem") {
                 if (args.length < 3) {
                     alert("Syntax Error: Use !getItem [itemName] [amount]");
@@ -2258,6 +2261,9 @@ function highlightNPC(btnElement) {
             updateUI(); 
             
             alert(`Added ${amount} gold. Total gold: ${player.gold}`);
+        }
+        else if (processedCommand === "popcorn" || processedCommand === "!popcorn") {
+            alert("!getItem\n!getXp\n!getGold\n!getSecret\npopcorn");
         }
             else {
                 alert("Syntax Error: Unknown command.");
