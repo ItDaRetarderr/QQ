@@ -705,22 +705,7 @@
             document.getElementById('popup').style.display = 'block';
         }
 
-        function selectHero(name) {
-            const data = heroData[name];
-            if (!data) return;
-
-            // Set player stats
-            player.name = name;
-            player.hp = data.hp;
-            player.maxHp = data.hp;
-            player.mp = data.mp;
-            player.maxMp = data.mp;
-            player.abilities = [...data.abilities]; // Copy the abilities array
-
-            // Close the preview and move to the next screen
-            closePopup();
-            transitionToCutscene();
-        }
+       
 
         function selectHero(name) {
             const data = heroData[name];
@@ -737,7 +722,7 @@
                 av.style.backgroundPosition = 'center';
             });
             // -------------------------------------------------
-
+            closePopup();
             transitionToCutscene();
         }
 
@@ -2276,34 +2261,47 @@ function highlightNPC(btnElement) {
         function closeSubMenu() { document.getElementById('sub-menu').style.display = 'none'; clearInterval(liftInterval); }
         function closePopup() { document.getElementById('popup').style.display = 'none'; }
         function flee() {
-            // 1. Roll for success (50% chance)
-            if (Math.random() < 0.5) {
-                alert("You escaped safely!");
-                endFight();
+    // 1. Roll for success (50% chance)
+    if (Math.random() < 0.5) {
+        alert("You escaped safely!");
+        endFight();
+    } else {
+        // 2. Flee failed: Enemy attacks
+        alert("Flee failed! The enemy blocks your path and attacks!");
+        
+        // Calculate enemy damage
+        let damage = Math.floor(Math.random() * (enemy.dmg[1] - enemy.dmg[0] + 1)) + enemy.dmg[0];
+        
+        // Apply damage to player
+        player.hp -= damage;
+        
+        // Log the failure
+        const log = document.getElementById('combat-log');
+        if (log) {
+            log.innerHTML += `<div style="color:red">Failed to flee! ${enemy.name} dealt ${damage} damage!</div>`;
+        }
+        
+        // Update the UI
+        updateUI();
+        
+        // 3. Check for death
+        if (player.hp <= 0) {
+            alert("You were struck down while trying to run...");
+            
+            // FIX: Instead of reloading the whole game, call your respawn logic
+            // Replace 'handlePlayerDeath()' with whatever function you use for normal battle death
+            if (typeof handlePlayerDeath === "function") {
+                handlePlayerDeath(); 
             } else {
-                // 2. Flee failed: Enemy attacks
-                alert("Flee failed! The enemy blocks your path and attacks!");
-                
-                // Calculate enemy damage (assuming your dmg is an array [min, max])
-                let damage = Math.floor(Math.random() * (enemy.dmg[1] - enemy.dmg[0] + 1)) + enemy.dmg[0];
-                
-                // Apply damage to player
-                player.hp -= damage;
-                
-                // Log the failure
-                const log = document.getElementById('combat-log');
-                if (log) {
-                    log.innerHTML += `<div style="color:red">Failed to flee! ${enemy.name} dealt ${damage} damage!</div>`;
-                }
-                
-                // Update the UI and check if player died from the flee attempt
+                // Manual fallback if you haven't made a function yet:
+                player.hp = player.maxHp; 
                 updateUI();
-                if (player.hp <= 0) {
-                    alert("You were struck down while trying to run...");
-                    location.reload(); // Or your game over logic
-                }
+                endFight(); // Exit the combat screen
+                alert("The enemy knocks you out trying to flee");
             }
         }
+    }
+}
         function updateEnemyBar() { document.getElementById('enemy-hp-fill').style.width = (enemy.hp / enemy.maxHp * 100) + "%"; }
         function transitionToCutscene() {
             // 1. Switch from Hero Selection to the Travel/Loading Screen
