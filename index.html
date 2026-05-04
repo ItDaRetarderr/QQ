@@ -543,9 +543,9 @@
 
         const gymData = {
             lifting: [
-                { lvl: 1, cost: 25, reward: 5, time: 25, clicks: 60, done: false },
-                { lvl: 2, cost: 50, reward: 10, time: 60, clicks: 120, done: false },
-                { lvl: 3, cost: 100, reward: 15, time: 160, clicks: 500, done: false }
+                { lvl: 1, cost: 25, reward: 5, time: 25, clicks: 5, done: false },
+                { lvl: 2, cost: 50, reward: 10, time: 60, clicks: 5, done: false },
+                { lvl: 3, cost: 100, reward: 15, time: 160, clicks: 5, done: false }
             ],
             sparring: [
                 { lvl: 1, cost: 25, reward: 5, enemy: { name: "Elite", hp: 100, dmg: [10, 20] }, done: false },
@@ -565,7 +565,9 @@
             bonusDmg: 0, selectedHero: null,
             gymLvlLift: 1, gymLvlSpar: 1,
             dodgeNext: false, freeMPTurns: 0, enemyDmgDebuff: 0, enemyDebuffTurns: 0,
-            equippedAccessory: null
+            equippedAccessory: null,
+            gymHpBonus: 0, 
+            gymDmgBonus: 0,
         };
         
         let enemy = { name: "", hp: 0, maxHp: 0, dmg: [0,0], gold: 0, exp: 0 };
@@ -968,77 +970,77 @@
         }
 
        function updateUI() {
-            // --- 1. DYNAMIC STAT CALCULATIONS ---
-            
-            // Instead of setting these to 100, we pull the values from the selected hero.
-            // If no hero is selected yet, it defaults to 100.
-            let baseMaxHp = player.selectedHero ? player.selectedHero.hp : 100;
-            let baseMaxMp = player.selectedHero ? player.selectedHero.mp : 100;
-            
-            let mpBonus = 0;
-            let hpBonus = 0;
-            let dmgBonus = 0;
+    // --- 1. DYNAMIC STAT CALCULATIONS ---
+    
+    // Base values from hero selection
+    let baseMaxHp = player.selectedHero ? player.selectedHero.hp : 100;
+    let baseMaxMp = player.selectedHero ? player.selectedHero.mp : 100;
+    
+    let mpBonus = 0;
+    let hpBonus = 0;
+    let dmgBonus = 0;
 
-            // Apply bonuses from inventory items
-            if (inventory["Rubik's Cube"] > 0) {
-                mpBonus = 15;
-            }
-            if (inventory["Zumba Video"] > 0) {
-                hpBonus = 20;
-            }
-            // --- BASTON LOGIC ---
-            if (inventory["Baston"] > 0) {
-                dmgBonus = 15;
-            }
+    // A. Apply bonuses from inventory items
+    if (inventory["Rubik's Cube"] > 0) {
+        mpBonus = 15;
+    }
+    if (inventory["Zumba Video"] > 0) {
+        hpBonus = 20;
+    }
+    if (inventory["Baston"] > 0) {
+        dmgBonus = 15;
+    }
 
-            // Update player max stats with base + bonuses
-            player.maxHp = baseMaxHp + hpBonus;
-            player.maxMp = baseMaxMp + mpBonus;
+    // B. INTEGRATE GYM & SPARRING BONUSES
+    // We add the persistent gym rewards to the current calculation
+    player.maxHp = baseMaxHp + hpBonus + (player.gymHpBonus || 0);
+    player.maxMp = baseMaxMp + mpBonus;
 
-            player.bonusDmg = dmgBonus;
+    // Total damage includes item bonus + permanent sparring bonus
+    player.bonusDmg = dmgBonus + (player.gymDmgBonus || 0);
 
-            // Safety checks: current HP/MP shouldn't exceed new Max
-            if (player.hp > player.maxHp) player.hp = player.maxHp;
-            if (player.mp > player.maxMp) player.mp = player.maxMp;
+    // Safety checks: current HP/MP shouldn't exceed new Max
+    if (player.hp > player.maxHp) player.hp = player.maxHp;
+    if (player.mp > player.maxMp) player.mp = player.maxMp;
 
-            // --- 2. UPDATE TEXT ELEMENTS ---
-            document.getElementById('ui-hp').innerText = Math.round(player.hp);
-            document.getElementById('ui-maxhp').innerText = player.maxHp;
-            document.getElementById('ui-mp').innerText = Math.round(player.mp);
-            document.getElementById('ui-maxmp').innerText = player.maxMp;
-            document.getElementById('ui-gold').innerText = player.gold;
-            document.getElementById('ui-lvl').innerText = player.lvl;
-            
-            // --- 3. UPDATE VISUAL BARS ---
-            if (document.getElementById('hp-fill')) {
-                document.getElementById('hp-fill').style.width = (player.hp / player.maxHp * 100) + "%";
-            }
-            if (document.getElementById('mp-fill')) {
-                document.getElementById('mp-fill').style.width = (player.mp / player.maxMp * 100) + "%";
-            }
+    // --- 2. UPDATE TEXT ELEMENTS ---
+    document.getElementById('ui-hp').innerText = Math.round(player.hp);
+    document.getElementById('ui-maxhp').innerText = player.maxHp;
+    document.getElementById('ui-mp').innerText = Math.round(player.mp);
+    document.getElementById('ui-maxmp').innerText = player.maxMp;
+    document.getElementById('ui-gold').innerText = player.gold;
+    document.getElementById('ui-lvl').innerText = player.lvl;
+    
+    // --- 3. UPDATE VISUAL BARS ---
+    if (document.getElementById('hp-fill')) {
+        document.getElementById('hp-fill').style.width = (player.hp / player.maxHp * 100) + "%";
+    }
+    if (document.getElementById('mp-fill')) {
+        document.getElementById('mp-fill').style.width = (player.mp / player.maxMp * 100) + "%";
+    }
 
-            // --- 4. EXPERIENCE & LEVELS ---
-            const expLabel = document.getElementById('ui-exp');
-            const nextExpLabel = document.getElementById('ui-next-exp');
-            
-            if (player.lvl >= 5) {
-                expLabel.innerText = "MAXED";
-                nextExpLabel.innerText = "";
-            } else {
-                expLabel.innerText = player.exp;
-                nextExpLabel.innerText = expRequirements[player.lvl];
-            }
+    // --- 4. EXPERIENCE & LEVELS ---
+    const expLabel = document.getElementById('ui-exp');
+    const nextExpLabel = document.getElementById('ui-next-exp');
+    
+    if (player.lvl >= 5) {
+        expLabel.innerText = "MAXED";
+        nextExpLabel.innerText = "";
+    } else {
+        expLabel.innerText = player.exp;
+        nextExpLabel.innerText = expRequirements[player.lvl];
+    }
 
-            // --- 5. COMBAT BUTTONS ---
-            document.getElementById('atk-2').disabled = (player.lvl < 3);
-            document.getElementById('atk-3').disabled = (player.lvl < 5);
+    // --- 5. COMBAT BUTTONS ---
+    document.getElementById('atk-2').disabled = (player.lvl < 3);
+    document.getElementById('atk-3').disabled = (player.lvl < 5);
 
-            if(player.selectedHero) {
-                document.getElementById('atk-1').innerText = player.selectedHero.abilities[0].name;
-                document.getElementById('atk-2').innerText = player.selectedHero.abilities[1].name;
-                document.getElementById('atk-3').innerText = player.selectedHero.abilities[2].name;
-            }
-        }
+    if(player.selectedHero) {
+        document.getElementById('atk-1').innerText = player.selectedHero.abilities[0].name;
+        document.getElementById('atk-2').innerText = player.selectedHero.abilities[1].name;
+        document.getElementById('atk-3').innerText = player.selectedHero.abilities[2].name;
+    }
+}
 
         function addExp(amount) {
             if (player.lvl >= 5) return;
@@ -1238,21 +1240,24 @@
                     }
                 }, 1000);
             }
+            
             liftClicks++;
             updateGymUI();
+
             if (liftClicks >= liftTarget) {
                 clearInterval(liftInterval);
                 document.getElementById('lift-btn').style.display = "none";
-                if(!lvlObj.done) {
-                    player.maxHp += lvlObj.reward;
-                    player.hp = player.maxHp;
+                
+                if (!lvlObj.done) {
+                    player.gymHpBonus += lvlObj.reward; // Save the bonus persistently
                     lvlObj.done = true;
-                    if(player.gymLvlLift < 3) player.gymLvlLift++;
-                    alert(`Success! HP increased by +${lvlObj.reward}`);
+                    if (player.gymLvlLift < 3) player.gymLvlLift++;
+                    alert(`Success! Your Max HP increased by +${lvlObj.reward}!`);
                 } else {
-                    alert("Completed! No rewards granted as you already finished this.");
+                    alert("Level already completed! No extra rewards granted.");
                 }
-                updateUI();
+                
+                updateUI(); // Refresh the top-bar stats
                 openGym();
             }
         }
@@ -1266,10 +1271,13 @@
             closeSubMenu();
             isCombatActive = true;
             isSparring = true;
+            
+            // Set the reward and index so the win condition knows what to give
             currentSparReward = lvlObj.reward;
             currentSparIndex = idx;
             
             setupEnemy(lvlObj.enemy.name, lvlObj.enemy.hp, lvlObj.enemy.dmg, 0, 0);
+            
             document.getElementById('items-btn').disabled = true;
             document.getElementById('flee-btn').innerText = "Give Up";
             
@@ -1834,34 +1842,39 @@ function highlightNPC(btnElement) {
             updateEnemyBar();
         }
 
-        function win() { 
+        function win() {
             if (isSparring) {
                 const lvlObj = gymData.sparring[currentSparIndex];
-                if(!lvlObj.done) {
-                    player.bonusDmg += currentSparReward;
-                    lvlObj.done = true;
-                    if(player.gymLvlSpar < 3) player.gymLvlSpar++;
-                    alert(`Sparring Victory! Damage permanently increased by +${currentSparReward}`);
-                } else alert("Sparring Victory!");
+                if (!lvlObj.done) {
+                player.gymDmgBonus += currentSparReward; // Save damage persistently
+                lvlObj.done = true;
+                if (player.gymLvlSpar < 3) player.gymLvlSpar++;
+                alert(`Sparring Victory! Damage permanently increased by +${currentSparReward}`);
             } else {
-                let gGain = enemy.gold; 
+                    alert("Sparring Victory!");
+                }
+                
+                // Reset sparring state so regular combat rewards work next time
+                isSparring = false; 
+                updateUI(); // Refresh top bar to show new bonusDmg
+            } else {
+                let gGain = enemy.gold;
                 let eGain = enemy.exp;
 
                 // --- EMMEL BONUS LOGIC ---
                 if (player.equippedAccessory === "Emmel") {
-                    eGain += 10; // Add the +10 bonus to the local variable
+                    eGain += 10; 
                 }
                 // -------------------------
 
-                if(quests.q1.status === "active") inventory["Rags"] = (inventory["Rags"] || 0) + 1;
-                if(quests.q3.status === "active") inventory["Peasant Gold"] = (inventory["Peasant Gold"] || 0) + gGain;
+                if (quests.q1.status === "active") inventory["Rags"] = (inventory["Rags"] || 0) + 1;
+                if (quests.q3.status === "active") inventory["Peasant Gold"] = (inventory["Peasant Gold"] || 0) + gGain;
                 else player.gold += gGain;
 
-                // The alert now shows the boosted eGain
-                alert(`Victory! +${gGain}g and +${eGain}exp ${player.equippedAccessory === "Emmel" ? "(+10 from Emmel)" : ""}`); 
-                addExp(eGain); 
+                alert(`Victory! +${gGain}g and +${eGain}exp ${player.equippedAccessory === "Emmel" ? "(+10 from Emmel)" : ""}`);
+                addExp(eGain);
             }
-            endFight(); 
+            endFight();
         }
 
         function lose() { 
