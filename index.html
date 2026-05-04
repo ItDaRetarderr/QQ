@@ -543,9 +543,9 @@
 
         const gymData = {
             lifting: [
-                { lvl: 1, cost: 25, reward: 5, time: 25, clicks: 5, done: false },
-                { lvl: 2, cost: 50, reward: 10, time: 60, clicks: 5, done: false },
-                { lvl: 3, cost: 100, reward: 15, time: 160, clicks: 5, done: false }
+                { lvl: 1, cost: 25, reward: 5, time: 15, clicks: 60, done: false },
+                { lvl: 2, cost: 50, reward: 10, time: 45, clicks: 120, done: false },
+                { lvl: 3, cost: 100, reward: 15, time: 145, clicks: 500, done: false }
             ],
             sparring: [
                 { lvl: 1, cost: 25, reward: 5, enemy: { name: "Elite", hp: 100, dmg: [10, 20] }, done: false },
@@ -1232,34 +1232,37 @@
                 liftInterval = setInterval(() => {
                     liftTimeLeft--;
                     updateGymUI();
-                    if (liftTimeLeft <= 0) {
+                if (liftTimeLeft <= 0) {
                         clearInterval(liftInterval);
                         document.getElementById('lift-btn').style.display = "none";
                         alert("Time's up! You failed.");
+                        document.getElementById('gym-ui').style.display = "none";
                         openGym();
-                    }
-                }, 1000);
-            }
-            
-            liftClicks++;
-            updateGymUI();
-
-            if (liftClicks >= liftTarget) {
-                clearInterval(liftInterval);
-                document.getElementById('lift-btn').style.display = "none";
-                
-                if (!lvlObj.done) {
-                    player.gymHpBonus += lvlObj.reward; // Save the bonus persistently
-                    lvlObj.done = true;
-                    if (player.gymLvlLift < 3) player.gymLvlLift++;
-                    alert(`Success! Your Max HP increased by +${lvlObj.reward}!`);
-                } else {
-                    alert("Level already completed! No extra rewards granted.");
+                        }
+                    }, 1000);
                 }
                 
-                updateUI(); // Refresh the top-bar stats
-                openGym();
-            }
+                liftClicks++;
+                updateGymUI();
+
+                if (liftClicks >= liftTarget) {
+                    clearInterval(liftInterval);
+                    document.getElementById('lift-btn').style.display = "none";
+                    
+                    if (!lvlObj.done) {
+                        player.gymHpBonus += lvlObj.reward; // Save the bonus persistently
+                        lvlObj.done = true;
+                        if (player.gymLvlLift < 3) player.gymLvlLift++;
+                        alert(`Success! Your Max HP increased by +${lvlObj.reward}!`);
+                    } else {
+                        alert("Level already completed! No extra rewards granted.");
+                    }
+                    
+                    updateUI(); // Refresh the top-bar stats
+                    document.getElementById('gym-ui').style.display = "none";
+                    openGym();
+
+                }
         }
 
         function updateGymUI() {
@@ -1403,6 +1406,9 @@
 
         function checkFieldCompletion() {
             const field = schoolData[currentField];
+
+            document.getElementById('quiz-ui').style.display = "none";
+
             if (currentQuizLvl === 2) {
                 if(!field.finished) {
                     field.finished = true;
@@ -1878,10 +1884,17 @@ function highlightNPC(btnElement) {
         }
 
         function lose() { 
-            alert(`Defeated! You were sent Home and lost 10g.`); 
-            player.gold = Math.max(0, player.gold - 10); 
-            player.hp = player.maxHp; player.mp = player.maxMp; 
-            endFight(); 
+            if (isSparring) {
+                alert("Sparring ended! You failed to defeat your opponent.");
+                // We simply end the fight without the 10g penalty or "Home" teleport
+                endFight(); 
+            } else {
+                alert(`Defeated! You were sent Home and lost 10g.`); 
+                player.gold = Math.max(0, player.gold - 10); 
+                player.hp = player.maxHp; 
+                player.mp = player.maxMp; 
+                endFight(); // Normal lose function that goes Home
+            }
         }
         
         function endFight() {
@@ -1893,6 +1906,7 @@ function highlightNPC(btnElement) {
             document.getElementById('combat-view').style.display = 'none';
             document.getElementById('standard-nav').style.display = 'flex';
             document.getElementById('combat-nav').style.display = 'none';
+            document.getElementById('battle-confirm-ui').style.display = "none";
             travelTo("Home");
             updateUI();
         }
@@ -2274,47 +2288,52 @@ function highlightNPC(btnElement) {
         function closeSubMenu() { document.getElementById('sub-menu').style.display = 'none'; clearInterval(liftInterval); }
         function closePopup() { document.getElementById('popup').style.display = 'none'; }
         function flee() {
-    // 1. Roll for success (50% chance)
-    if (Math.random() < 0.5) {
-        alert("You escaped safely!");
-        endFight();
-    } else {
-        // 2. Flee failed: Enemy attacks
-        alert("Flee failed! The enemy blocks your path and attacks!");
-        
-        // Calculate enemy damage
-        let damage = Math.floor(Math.random() * (enemy.dmg[1] - enemy.dmg[0] + 1)) + enemy.dmg[0];
-        
-        // Apply damage to player
-        player.hp -= damage;
-        
-        // Log the failure
-        const log = document.getElementById('combat-log');
-        if (log) {
-            log.innerHTML += `<div style="color:red">Failed to flee! ${enemy.name} dealt ${damage} damage!</div>`;
-        }
-        
-        // Update the UI
-        updateUI();
-        
-        // 3. Check for death
-        if (player.hp <= 0) {
-            alert("You were struck down while trying to run...");
-            
-            // FIX: Instead of reloading the whole game, call your respawn logic
-            // Replace 'handlePlayerDeath()' with whatever function you use for normal battle death
-            if (typeof handlePlayerDeath === "function") {
-                handlePlayerDeath(); 
+            if (isSparring) {
+                alert("You gave up the match. Better luck next time!");
+                endFight(); // endFight() handles the transition back to the main screen
+                return; // Exit the function so the 50/50 roll doesn't happen
+            }
+
+            // 1. Roll for success (50% chance)
+            if (Math.random() < 0.5) {
+                alert("You escaped safely!");
+                endFight();
             } else {
-                // Manual fallback if you haven't made a function yet:
-                player.hp = player.maxHp; 
+                // 2. Flee failed: Enemy attacks
+                alert("Flee failed! The enemy blocks your path and attacks!");
+                
+                // Calculate enemy damage
+                let damage = Math.floor(Math.random() * (enemy.dmg[1] - enemy.dmg[0] + 1)) + enemy.dmg[0];
+                
+                // Apply damage to player
+                player.hp -= damage;
+                
+                // Log the failure
+                const log = document.getElementById('combat-log');
+                if (log) {
+                    log.innerHTML += `<div style="color:red">Failed to flee! ${enemy.name} dealt ${damage} damage!</div>`;
+                }
+                
+                // Update the UI
                 updateUI();
-                endFight(); // Exit the combat screen
-                alert("The enemy knocks you out trying to flee");
+                
+                // 3. Check for death
+                if (player.hp <= 0) {
+                    alert("You were struck down while trying to run...");
+                    
+                    // FIX: Instead of reloading the whole game, call your respawn logic
+                    // Replace 'handlePlayerDeath()' with whatever function you use for normal battle death
+                    if (typeof handlePlayerDeath === "function") {
+                        handlePlayerDeath(); 
+                    } else {
+                        // Manual fallback if you haven't made a function yet:
+                        player.hp = player.maxHp; 
+                        updateUI();
+                        endFight(); // Exit the combat screen
+                    }
+                }
             }
         }
-    }
-}
         function updateEnemyBar() { document.getElementById('enemy-hp-fill').style.width = (enemy.hp / enemy.maxHp * 100) + "%"; }
         function transitionToCutscene() {
             // 1. Switch from Hero Selection to the Travel/Loading Screen
