@@ -274,9 +274,25 @@
             </div>
         </div>
 
-        <div id="battle-confirm-ui" style="display:none; text-align:center; padding: 10px; background: rgba(0,0,0,0.9); border: 1px solid var(--gold); margin-bottom: 5px;">
-            <p id="battle-preview-text" style="margin: 0 0 5px 0; font-size: 13px; color: var(--gold);"></p>
-            <button id="battle-confirm-btn" class="nav-btn" style="width: 100%; background: var(--gold); color: black; font-weight: bold;">
+        <div id="battle-confirm-ui" style="
+            display: none; 
+            text-align: center; 
+            padding: 10px;           /* Reduced from 15px */
+            background: rgba(0,0,0,0.95); 
+            border: 2px solid var(--gold); 
+            position: fixed; 
+            bottom: 110px;           /* Moved up slightly to clear the buttons */
+            left: 50%;               /* Center the starting point */
+            transform: translateX(-50%); /* Shift back by half its width to perfectly center */
+            width: auto;             /* Let it shrink to fit the content */
+            min-width: 180px;        /* Ensures it's not TOO small */
+            max-width: 220px;        /* Prevents it from getting too wide */
+            z-index: 9999; 
+            border-radius: 8px;
+            box-shadow: 0 -5px 15px rgba(0,0,0,0.5);
+        ">
+            <p id="battle-preview-text" style="margin: 0 0 10px 0; font-size: 14px; color: var(--gold); font-weight: bold;"></p>
+            <button id="battle-confirm-btn" class="nav-btn" style="width: 100%; background: var(--gold); color: black; font-weight: bold; padding: 12px; border: none; border-radius: 4px;">
                 CONFIRM ABILITY
             </button>
         </div>
