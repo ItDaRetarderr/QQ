@@ -120,12 +120,50 @@
         .top-bar { position: absolute; top: 0; width: 100%; background: rgba(0,0,0,0.8); display: flex; justify-content: space-around; padding: 10px 0; border-bottom: 2px solid var(--gold); z-index: 100; }
         .bottom-bar { position: absolute; bottom: 0; width: 100%; background: rgba(0,0,0,0.9); display: flex; justify-content: center; gap: 10px; padding: 15px 0; border-top: 2px solid var(--gold); z-index: 100; }
 
-        /* Combat Visuals */
-        #combat-view { display: none; width: 90%; justify-content: space-between; align-items: center; }
-        .avatar { width: 150px; height: 200px; background: #444; border: 2px solid #fff; }
-        .enemy-avatar { border-color: var(--hp-color); }
+        /* =========================================
+        COMBAT VISUALS - UPDATED FOR PC
+        ========================================= */
+        #combat-view { 
+            display: none; 
+            width: 100%;
+            height: 70vh; /* Keeps it in the upper 70% of the screen */
+            justify-content: space-around; 
+            align-items: center; /* Centers avatars vertically in their area */
+            position: absolute;
+            top: 60px; /* Positions it below the top UI bar */
+        }
+
+        .unit {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
         
-        .hp-bar-container { width: 100%; height: 10px; background: #333; margin-bottom: 5px; border: 1px solid #000; }
+        /* Increased Avatar Size */
+        .avatar { 
+            width: 220px;  
+            height: 280px; 
+            background: #444; 
+            border: 3px solid #fff; 
+            box-shadow: 0 0 20px rgba(0,0,0,0.6);
+            background-size: cover;
+            background-position: center;
+            border-radius: 10px;
+        }
+
+        .enemy-avatar { 
+            border-color: var(--hp-color); 
+        }
+        
+        .hp-bar-container { 
+            width: 220px; /* Fixed width for better centering */
+            height: 14px; 
+            background: #333; 
+            margin: 10px 0; 
+            border: 2px solid #000; 
+        }
+
         .hp-fill { height: 100%; background: var(--hp-color); transition: width 0.3s; }
         .stat-val { color: var(--gold); font-weight: bold; }
         .nav-btn { 
@@ -160,7 +198,21 @@
         }
         .nav-btn:disabled { opacity: 0.3; border-color: #555; cursor: not-allowed; }
 
-        #combat-log { background: rgba(0,0,0,0.8); padding: 10px; border: 1px solid var(--gold); width: 220px; height: 80px; font-size: 12px; overflow-y: auto; }
+        /* Combat Log Sizing */
+        #combat-log { 
+            position: absolute;
+            top: 10px; /* Sits right below the Top Bar */
+            background: rgba(0,0,0,0.85); 
+            padding: 12px; 
+            border: 2px solid var(--gold); 
+            width: 300px;
+            height: 80px;
+            font-size: 14px;
+            overflow-y: auto;
+            color: #eee;
+            text-align: center;
+            z-index: 10;
+        }
         
         .claim-btn { display:none; margin: 10px auto; color:black; font-weight:bold; padding:5px 15px; border: none; cursor: pointer; }
 
@@ -186,6 +238,189 @@
         #travel-screen.active {
             display: flex;
         }
+
+        /* =========================================
+        UPDATED MOBILE LANDSCAPE OPTIMIZATION
+        ========================================= */
+        @media screen and (max-height: 500px) and (orientation: landscape) {
+            /* 1. Shrink the Titles */
+            #selection-screen h1 {
+                font-size: 1.5rem !important;
+                letter-spacing: 1px !important;
+            }
+
+            #selection-screen h2 {
+                font-size: 0.8rem !important;
+                margin-top: 2px !important;
+            }
+
+            /* 2. Resize Hero Grid and Selection Images */
+            .hero-grid {
+                grid-template-columns: repeat(6, 1fr) !important; 
+                gap: 8px;
+                padding: 10px;
+                max-height: 55vh; 
+                overflow-y: auto;
+            }
+
+            .hero-option {
+                width: 80px;  /* Shrunk down from 100px */
+                height: 80px; 
+            }
+
+            .hero-selection-img {
+                width: 50px; /* Shrunk down from 60px */
+                height: 50px;
+            }
+
+            /* 3. Combat View & Avatar Sizing */
+            #combat-view { 
+                height: calc(100vh - 140px); /* Tighter fit to keep UI clear */
+                top: 50px; 
+                padding: 0 40px 10px 40px;
+                align-items: flex-end; /* Keeps units grounded */
+                justify-content: space-between; /* Pushes units to the far edges */
+            }
+
+            .hp-bar-container {
+                width: 120px !important; /* Shrunk from 220px to 120px */
+                height: 10px !important; /* Slightly thinner for a cleaner look */
+                margin: 5px auto !important;
+            }
+
+            .avatar { 
+                width: 140px;  /* Shrunk from 180px to prevent log overlap */
+                height: 190px; 
+                border-width: 2px;
+            }
+
+            /* Shift Hero to the left */
+            .unit:first-child .avatar {
+                margin-right: 40px; 
+            }
+
+            /* Shift Enemy to the right */
+            .unit:last-child .avatar {
+                margin-left: 40px;
+            }
+
+            /* 4. Fix Combat Log Blending */
+            #combat-log { 
+                position: absolute;
+                top: 15px; 
+                left: 50%;
+                transform: translateX(-50%);
+                background: rgba(0, 0, 0, 0.95); /* Solidified background */
+                width: 280px;
+                height: 60px;
+                z-index: 100; /* Ensures it stays above characters */
+                border: 2px solid var(--gold);
+                pointer-events: none; /* Allows clicks to pass through if needed */
+            }
+
+            /* 5. UI Spacing Fix */
+            #battle-confirm-ui {
+                bottom: 80px !important; 
+                transform: translateX(-50%) scale(0.9); /* Shrunk to fit landscape */
+            }
+        }
+
+        /* =========================================
+        MOBILE PORTRAIT OPTIMIZATION
+        ========================================= */
+        @media screen and (max-width: 480px) and (orientation: portrait) {
+            
+            /* 1. Center the Header Text Container */
+            #selection-screen div[style*="text-align: center"] {
+                width: 100%;
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+            }
+
+            #selection-screen h1 {
+                font-size: 1.8rem !important; /* Slightly smaller to prevent overflow */
+                margin-bottom: 5px !important;
+                text-align: center;
+                width: 90%; /* Keeps text from touching edges */
+            }
+
+            /* 2. Center the Grid and its Items */
+            .hero-grid {
+                grid-template-columns: repeat(2, 1fr) !important;
+                justify-content: center;    /* Centers the grid columns horizontally */
+                justify-items: center;      /* Centers the hero boxes inside the columns */
+                align-items: center;
+                gap: 15px; 
+                padding: 15px 0;            /* Remove side padding to maximize space */
+                width: 100%;
+                max-height: 70vh;
+                overflow-y: auto;
+            }
+
+            /* 3. Adjust Option Box Sizing */
+            .hero-option {
+                width: 140px;  /* Adjusted slightly to ensure 2 fit on very narrow phones */
+                height: 140px;
+                margin: 0 auto; /* Extra insurance for centering */
+            }
+
+            /* 4. Fix Container Padding */
+            #selection-screen {
+                padding: 10px 0 !important;
+                align-items: center; /* Ensures the flex container centers the children */
+            }
+
+            /* Combat View: Stack vertically to allow larger images */
+        #combat-view {
+            display: flex;
+            flex-direction: column !important; /* Stack Player and Enemy */
+            justify-content: flex-start; 
+            align-items: center;
+            height: calc(100vh - 120px); /* Leave room for Bottom Bar */
+            top: 60px !important;       /* Push below the Top Bar */
+            gap: 5px; 
+            padding-top: 80px;           /* Offset for the Combat Log */
+        }
+
+        /* Fix Combat Log position below Top Bar[cite: 5] */
+        #combat-log {
+            position: absolute;
+            top: 65px !important;        /* Moves it exactly below the Top Bar[cite: 5] */
+            left: 50%;
+            transform: translateX(-50%);
+            width: 95%;
+            height: 60px;
+            z-index: 101;
+            font-size: 12px;
+        }
+
+        /* Scale Avatars to fill space[cite: 5] */
+        .avatar {
+            width: 160px;  /* Increased from 130px */
+            height: 210px; /* Increased from 170px */
+            border-width: 2px;
+        }
+
+        .hp-bar-container {
+            width: 150px; 
+            margin-bottom: 5px;
+        }
+
+        /* Move Confirm UI to avoid overlapping buttons[cite: 5] */
+        #battle-confirm-ui {
+            bottom: 110px !important;
+            width: 85%;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+
+        /* Navigation Bar adjustment[cite: 5] */
+        .bottom-bar {
+            height: 80px;
+            padding: 5px 0;
+        }
+        }
     </style>
 </head>
 <body>
@@ -200,7 +435,7 @@
                 </h2>
             </div>
             <div class="hero-grid" id="hero-grid"></div>
-        </div>
+    </div>
 
         <div id="popup" class="modal">
             <h2 id="pop-name">Hero</h2>
@@ -265,11 +500,22 @@
         </div>
 
         <div id="combat-view">
-            <div class="unit"><p>PLAYER</p><div class="avatar"></div></div>
+            <!-- The Log is now absolute positioned to the top -->
             <div id="combat-log">Encounter Started!</div>
+
+            <!-- Player Unit -->
             <div class="unit">
-                <p id="enemy-name-ui">ENEMY</p>
-                <div class="hp-bar-container"><div id="enemy-hp-fill" class="hp-fill" style="width: 100%;"></div></div>
+                <p style="margin: 0 0 5px 0; font-weight: bold; color: var(--gold);">PLAYER</p>
+                <div class="avatar"></div>
+                <!-- Optional: Player HP bar can go here if you want it visible in combat -->
+            </div>
+
+            <!-- Enemy Unit -->
+            <div class="unit">
+                <p id="enemy-name-ui" style="margin: 0 0 5px 0; font-weight: bold; color: var(--hp-color);">ENEMY</p>
+                <div class="hp-bar-container">
+                    <div id="enemy-hp-fill" class="hp-fill" style="width: 100%;"></div>
+                </div>
                 <div class="avatar enemy-avatar"></div>
             </div>
         </div>
@@ -740,6 +986,9 @@
                 av.style.backgroundPosition = 'center';
             });
             // -------------------------------------------------
+            document.getElementById('selection-screen').classList.remove('active');
+            document.getElementById('selection-screen').style.display = 'none';
+
             closePopup();
             transitionToCutscene();
         }
