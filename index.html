@@ -245,83 +245,94 @@
         @media screen and (max-height: 500px) and (orientation: landscape) {
             /* 1. Shrink the Titles */
             #selection-screen h1 {
-                font-size: 1.5rem !important;
+                font-size: 2rem !important;
                 letter-spacing: 1px !important;
             }
 
             #selection-screen h2 {
-                font-size: 0.8rem !important;
+                font-size: 1rem !important;
                 margin-top: 2px !important;
-            }
+            }   
 
-            /* 2. Resize Hero Grid and Selection Images */
+            /* 2. Resize Hero Grid and Selection Images - LARGER SELECTION */
             .hero-grid {
-                grid-template-columns: repeat(6, 1fr) !important; 
-                gap: 8px;
+                grid-template-columns: repeat(6, 1fr) !important; /* Fewer columns = larger items */
+                gap: 12px;
                 padding: 10px;
-                max-height: 55vh; 
+                max-height: 60vh; 
                 overflow-y: auto;
+                justify-items: center; /* Centers the larger boxes */
             }
 
             .hero-option {
-                width: 80px;  /* Shrunk down from 100px */
-                height: 80px; 
+                width: 100px !important;  /* Increased from 80px */
+                height: 100px !important; /* Increased from 80px */
             }
 
             .hero-selection-img {
-                width: 50px; /* Shrunk down from 60px */
-                height: 50px;
+                width: 70px !important;   /* Increased from 50px */
+                height: 70px !important;  /* Increased from 50px */
             }
 
-            /* 3. Combat View & Avatar Sizing */
+            /* 3. Combat View & Avatar Sizing - FIXED ALIGNMENT */
             #combat-view { 
-                height: calc(100vh - 140px); /* Tighter fit to keep UI clear */
-                top: 50px; 
-                padding: 0 40px 10px 40px;
-                align-items: flex-end; /* Keeps units grounded */
-                justify-content: space-between; /* Pushes units to the far edges */
+                height: 55vh;         /* Reduced height to create a gap from the Bottom UI */
+                top: 75px;           /* Pushed down further to stay away from the Combat Log */
+                display: flex;
+                flex-direction: row !important; 
+                justify-content: space-between; /* Pushes units toward sides but within padding */
+                align-items: center;            
+                padding: 0 40px;      /* Adds "breathing room" so images don't touch screen edges */
+                width: 85%;           /* Narrowed width to prevent edge-touching */
+                left: 50%;
+                transform: translateX(-50%);    
+                max-width: 900px;     
+            }
+
+            .unit {
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                gap: 5px;             /* Space between Name/HP Bar and Avatar */
             }
 
             .hp-bar-container {
-                width: 120px !important; /* Shrunk from 220px to 120px */
-                height: 10px !important; /* Slightly thinner for a cleaner look */
-                margin: 5px auto !important;
+                width: 150px !important; 
+                height: 8px !important; 
+                margin: 2px auto !important;
             }
 
             .avatar { 
-                width: 140px;  /* Shrunk from 180px to prevent log overlap */
-                height: 190px; 
+                width: 150px;         /* Slightly smaller to ensure fit on all phone heights */
+                height: 180px; 
                 border-width: 2px;
             }
 
-            /* Shift Hero to the left */
-            .unit:first-child .avatar {
-                margin-right: 40px; 
-            }
-
-            /* Shift Enemy to the right */
+            /* Remove the specific margins that were pushing units to edges */
+            .unit:first-child .avatar,
             .unit:last-child .avatar {
-                margin-left: 40px;
+                margin: 0; 
             }
 
-            /* 4. Fix Combat Log Blending */
+            /* 4. Combat Log - Fixed Position */
             #combat-log { 
                 position: absolute;
-                top: 15px; 
+                top: 5px; /* Moved up to ensure space between log and avatars */
                 left: 50%;
                 transform: translateX(-50%);
-                background: rgba(0, 0, 0, 0.95); /* Solidified background */
-                width: 280px;
-                height: 60px;
-                z-index: 100; /* Ensures it stays above characters */
+                background: rgba(0, 0, 0, 0.9); 
+                width: 300px;
+                height: 80px;
+                z-index: 100;
                 border: 2px solid var(--gold);
-                pointer-events: none; /* Allows clicks to pass through if needed */
+                pointer-events: none;
+                font-size: 12px;
             }
 
             /* 5. UI Spacing Fix */
             #battle-confirm-ui {
-                bottom: 80px !important; 
-                transform: translateX(-50%) scale(0.9); /* Shrunk to fit landscape */
+                bottom: 110px !important; 
+                transform: translateX(-50%) scale(0.85)
             }
         }
 
@@ -343,6 +354,50 @@
                 margin-bottom: 5px !important;
                 text-align: center;
                 width: 90%; /* Keeps text from touching edges */
+            }
+
+            /* 1. Allow the Preview Box to grow Top-to-Down */
+            .modal {
+                width: 90% !important;      /* Use 90% of screen width */
+                max-width: 350px;           /* But don't let it get too wide */
+                padding: 20px 15px;         /* Vertical padding for breathing room */
+                height: auto;               /* Key: Let height adapt to content */
+                max-height: 85vh;           /* Prevent it from going off-screen */
+                overflow-y: auto;           /* Scroll if the text is too long */
+                display: none;
+                flex-direction: column;
+                align-items: center;
+            }
+
+            /* 2. Adjust the Image Sizing */
+            .pop-hero-img {
+                width: 140px;               /* Slightly larger for visibility */
+                height: 180px;              /* Taller height to prevent "squishing" */
+                margin: 10px auto;
+                flex-shrink: 0;             /* Prevents image from shrinking when text is long */
+            }
+
+            /* 3. Ability Boxes (Stretch them out) */
+            .ability-preview-box {
+                width: 100%;                /* Take full width of the modal */
+                gap: 10px;
+            }
+
+            .ab-box {
+                padding: 8px;
+                font-size: 13px;            /* Slightly larger for readability */
+            }
+
+            /* 4. Button Container (Stack vertically or space out) */
+            .modal div[style*="display: flex"] {
+                flex-direction: column;     /* Stack buttons to save horizontal space */
+                width: 100%;
+                gap: 8px !important;
+            }
+
+            .modal button {
+                width: 100%;                /* Buttons fill the width */
+                padding: 15px !important;   /* Larger tap targets for fingers */
             }
 
             /* 2. Center the Grid and its Items */
@@ -386,7 +441,7 @@
         /* Fix Combat Log position below Top Bar[cite: 5] */
         #combat-log {
             position: absolute;
-            top: 65px !important;        /* Moves it exactly below the Top Bar[cite: 5] */
+            top: 15px !important;        /* Moves it exactly below the Top Bar[cite: 5] */
             left: 50%;
             transform: translateX(-50%);
             width: 95%;
@@ -431,7 +486,7 @@
                     QAYYIM QUEST: RISE OF THE BOIS
                 </h1>
                 <h2 style="font-size: 1.5rem; color: #aaa; margin-top: 5px; text-transform: uppercase; letter-spacing: 4px;">
-                    Select Your Hero
+                    Select Your BOI
                 </h2>
             </div>
             <div class="hero-grid" id="hero-grid"></div>
@@ -986,9 +1041,17 @@
                 av.style.backgroundPosition = 'center';
             });
             // -------------------------------------------------
+            // Hide selection screen
             document.getElementById('selection-screen').classList.remove('active');
             document.getElementById('selection-screen').style.display = 'none';
 
+            // Ensure we start in Exploration mode, not Combat mode
+            document.getElementById('exploration-view').style.display = 'block';
+            document.getElementById('combat-view').style.display = 'none';
+            document.getElementById('standard-nav').style.display = 'flex';
+            document.getElementById('combat-nav').style.display = 'none';
+            // --- FIX ENDS HERE ---
+            
             closePopup();
             transitionToCutscene();
         }
