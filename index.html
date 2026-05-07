@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+\<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -303,8 +303,8 @@
             }
 
             .avatar { 
-                width: 150px;         /* Slightly smaller to ensure fit on all phone heights */
-                height: 180px; 
+                width: 130px;         /* Slightly smaller to ensure fit on all phone heights */
+                height: 160px; 
                 border-width: 2px;
             }
 
@@ -334,6 +334,21 @@
                 bottom: 110px !important; 
                 transform: translateX(-50%) scale(0.85)
             }
+        }
+
+        #selection-screen.active {
+            display: flex !important;
+            visibility: visible !important;
+        }
+
+        /* Ensure the base screen class is prepared */
+        .screen {
+            display: none; /* Everything starts hidden */
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
         }
 
         /* =========================================
@@ -476,9 +491,57 @@
             padding: 5px 0;
         }
         }
+
+        /* Add this inside your existing Portrait Media Query block */
+        #ingame-menu-modal {
+            width: 85% !important;
+            max-width: 320px;
+            padding: 25px 20px;
+            height: auto;
+            background: var(--card-bg);
+            border: 2px solid var(--gold);
+            border-radius: 10px;
+            box-shadow: 0 0 20px rgba(0,0,0,0.8);
+        }
+
+        #ingame-menu-modal button {
+            font-size: 14px !important;
+            letter-spacing: 1px;
+        }
+
+        #selection-screen.active {
+            display: flex !important;
+            visibility: visible !important;
+        }
+
+        /* Ensure the base screen class is prepared */
+        .screen {
+            display: none; /* Everything starts hidden */
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+        }
     </style>
 </head>
 <body>
+
+    <div id="main-menu" class="screen active">
+        <div style="text-align: center;">
+            <h1 style="font-size: 3rem; color: var(--gold); text-shadow: 3px 3px #000; margin-bottom: 50px;">
+                QAYYIM QUEST:<br>RISE OF THE BOIS!
+            </h1>
+            <div style="display: flex; flex-direction: column; gap: 20px; align-items: center;">
+                <button onclick="goToHeroSelection()" class="menu-btn" style="width: 250px; padding: 20px; font-size: 1.5rem; background: var(--gold); border: none; cursor: pointer; font-weight: bold; border-radius: 8px;">
+                    START GAME
+                </button>
+                <button onclick="quitGame()" class="menu-btn" style="width: 250px; padding: 20px; font-size: 1.5rem; background: #444; color: white; border: none; cursor: pointer; font-weight: bold; border-radius: 8px;">
+                    QUIT GAME
+                </button>
+            </div>
+        </div>
+    </div>
 
     <div id="selection-screen" class="screen active">
             <div style="text-align: center; margin-bottom: 30px;">
@@ -603,6 +666,24 @@
             <button class="nav-btn" onclick="openMap()">Map</button>
             <button class="nav-btn" onclick="openItems()">Items</button>
             <button class="nav-btn" onclick="openDevConsole()">Console</button>
+            <button onclick="openInGameMenu()" style="background: #444; color: white;">MENU</button>
+        </div>
+
+        <div id="ingame-menu-modal" class="modal">
+            <div style="text-align: center; width: 100%;">
+                <h3 style="color: var(--gold); margin-bottom: 20px; font-size: 1.5rem; letter-spacing: 1px;">GAME OPTIONS</h3>
+                <div style="display: flex; flex-direction: column; gap: 12px; width: 100%;">
+                    <button onclick="restartGameFlow()" style="width: 100%; padding: 14px; background: var(--gold); color: black; border: none; font-weight: bold; border-radius: 5px; cursor: pointer; text-transform: uppercase;">
+                        MAIN MENU
+                    </button>
+                    <button onclick="quitGame()" style="width: 100%; padding: 14px; background: #cc3333; color: white; border: none; font-weight: bold; border-radius: 5px; cursor: pointer; text-transform: uppercase;">
+                        QUIT GAME
+                    </button>
+                    <button onclick="closeInGameMenu()" style="width: 100%; padding: 10px; background: #333; color: #aaa; border: none; font-weight: bold; border-radius: 5px; cursor: pointer; margin-top: 10px;">
+                        CLOSE
+                    </button>
+                </div>
+            </div>
         </div>
 
         <div class="bottom-bar" id="combat-nav" style="display:none;">
@@ -615,6 +696,102 @@
     </div>
 
     <script>
+        // Function to move from Main Menu to Hero Selection
+        function goToHeroSelection() {
+            // 1. Hide the Main Menu
+            const mainMenu = document.getElementById('main-menu');
+            if (mainMenu) mainMenu.style.display = 'none';
+            
+            // 2. Target the Hero Selection Screen
+            const selectionScreen = document.getElementById('selection-screen');
+            
+            // 3. Force it to show
+            selectionScreen.style.display = 'flex'; 
+            selectionScreen.classList.add('active');
+            
+            // 4. Ensure it's not hidden by any other class
+            selectionScreen.style.visibility = 'visible';
+            selectionScreen.style.opacity = '1';
+            
+            console.log("Transitioning to Hero Selection...");
+        }
+
+        // Function to Quit
+        function quitGame() {
+            if (confirm("Are you sure you want to quit the Bois?")) {
+                window.close();
+                // Fallback for browsers that block window.close()
+                alert("Please close this tab to exit the game.");
+            }
+        }
+
+        // Ensure the game starts on the Main Menu, not Hero Selection
+        window.onload = function() {
+            // Hide all screens
+            const screens = document.querySelectorAll('.screen');
+            screens.forEach(s => s.classList.remove('active'));
+            
+            // Only show Main Menu
+            document.getElementById('main-menu').classList.add('active');
+        };
+
+        // Opens the options window from the bottom UI bar
+        function openInGameMenu() {
+            const menuModal = document.getElementById('ingame-menu-modal');
+            if (menuModal) {
+                menuModal.style.display = 'flex';
+            }
+        }
+
+        // Closes the options window
+        function closeInGameMenu() {
+            const menuModal = document.getElementById('ingame-menu-modal');
+            if (menuModal) {
+                menuModal.style.display = 'none';
+            }
+        }
+
+        function restartGameFlow() {
+    if (confirm("Are you sure you want to return to the Main Menu? Unsaved progress will be lost!")) {
+        // 1. Hide the In-Game Menu Modal first
+        closeInGameMenu();
+        
+        // 2. Hide the Selection Screen
+        const selectionScreen = document.getElementById('selection-screen');
+        if (selectionScreen) selectionScreen.style.display = 'none';
+
+        // 3. Hide the Game Screen (if it exists)
+        const gameScreen = document.getElementById('game-screen');
+        if (gameScreen) gameScreen.style.display = 'none';
+
+        // 4. Show the Main Menu by setting display to flex
+        const mainMenu = document.getElementById('main-menu');
+        if (mainMenu) {
+            mainMenu.style.display = 'flex'; 
+        } else {
+            // Hard reset as a safety net
+            location.reload(); 
+        }
+
+        // 5. Reset global variables if necessary
+        selectedHero = null;
+    }
+}
+
+        // Quit Game logic built with Android APK compatibility handles
+        function quitGame() {
+            if (confirm("Are you sure you want to exit the game?")) {
+                if (navigator.app && navigator.app.exitApp) {
+                    navigator.app.exitApp(); // Exits cleanly when deployed inside an APK wrapper
+                } else if (navigator.device && navigator.device.exitApp) {
+                    navigator.device.exitApp();
+                } else {
+                    window.close(); // Browser fallback wrapper
+                    alert("Please close this application tab to exit.");
+                }
+            }
+        }
+
         /* =========================================
            HERO DATABASE (13 HEROES)
            ========================================= */
@@ -2664,10 +2841,16 @@ function highlightNPC(btnElement) {
         }
         function updateEnemyBar() { document.getElementById('enemy-hp-fill').style.width = (enemy.hp / enemy.maxHp * 100) + "%"; }
         function transitionToCutscene() {
-            // 1. Switch from Hero Selection to the Travel/Loading Screen
-            document.getElementById('selection-screen').classList.remove('active');
+            // Hide Selection
+            const selectionScreen = document.getElementById('selection-screen');
+            if (selectionScreen) selectionScreen.style.display = 'none';
+
+            // Show Travel Screen
             const travelScreen = document.getElementById('travel-screen');
-            travelScreen.classList.add('active');
+            if (travelScreen) {
+                travelScreen.style.display = 'flex'; // Force it to show
+                travelScreen.classList.add('active');
+            }
 
             // 2. Setup the loading elements
             const loadingFill = document.getElementById('loading-fill');
@@ -2705,15 +2888,32 @@ function highlightNPC(btnElement) {
         }
 
         function startGame() {
-            // 1. Transition to the main Game Screen
-            document.getElementById('travel-screen').classList.remove('active');
-            document.getElementById('game-screen').classList.add('active');
+            // 1. Hide the travel/loading screen
+            const travelScreen = document.getElementById('travel-screen');
+            if (travelScreen) travelScreen.style.display = 'none';
             
-            // 2. Initialize the UI with player data
-            document.getElementById('ui-name').innerText = player.name;
-            document.getElementById('location-text').innerText = "Alley Way Central";
+            // 2. Show the main Game Screen
+            const gameScreen = document.getElementById('game-screen');
+            if (gameScreen) {
+                gameScreen.style.display = 'flex'; // or 'block' depending on your layout
+                gameScreen.classList.add('active'); 
+            } else {
+                console.error("Critical Error: 'game-screen' element not found in HTML.");
+            }
             
-            updateUI();
+            // 3. Initialize the UI with player data
+            // Ensure 'player' object exists before accessing .name
+            if (window.player && player.name) {
+                document.getElementById('ui-name').innerText = player.name;
+            }
+            
+            const locationText = document.getElementById('location-text');
+            if (locationText) locationText.innerText = "Alley Way Central";
+            
+            // Run your UI update function
+            if (typeof updateUI === "function") {
+                updateUI();
+            }
         }
     </script>
 </body>
