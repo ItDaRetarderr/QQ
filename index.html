@@ -1,4 +1,4 @@
-\<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -8,6 +8,8 @@
         /* =========================================
            CSS VARIABLES & GLOBAL STYLES
            ========================================= */
+        
+
         :root {
             --gold: #ffd700;
             --bg: #1a1a1a;
@@ -59,6 +61,25 @@
             /* Extra protection against scrolling */
             position: relative;
             overflow: hidden;
+        }
+
+        .btn-close {
+            background-color: transparent;
+            color: #ff4d4d;
+            border: 2px solid #ff4d4d;
+            padding: 10px 20px;
+            cursor: pointer;
+            font-weight: bold;
+            text-transform: uppercase;
+            transition: all 0.2s ease;
+            border-radius: 5px;
+            font-family: 'Segoe UI', sans-serif;
+        }
+
+        .btn-close:hover {
+            background-color: #ff4d4d;
+            color: white;
+            box-shadow: 0 0 10px rgba(255, 77, 77, 0.5);
         }
 
         /* Ensure that when a screen is active, it uses flex layout */
@@ -133,6 +154,13 @@
             top: 60px; /* Positions it below the top UI bar */
         }
 
+        #combat-view .avatar {
+            display: block !important;
+            visibility: visible !important;
+            min-height: 280px; /* Forces it to have height even if empty */
+            min-width: 220px;
+        }
+
         .unit {
             display: flex;
             flex-direction: column;
@@ -144,12 +172,13 @@
         .avatar { 
             width: 220px;  
             height: 280px; 
-            background: #444; 
+            background: #fff; 
             border: 3px solid #fff; 
             box-shadow: 0 0 20px rgba(0,0,0,0.6);
             background-size: cover;
             background-position: center;
             border-radius: 10px;
+            display: block;
         }
 
         .enemy-avatar { 
@@ -274,32 +303,97 @@
                 height: 70px !important;  /* Increased from 50px */
             }
 
-            /* 3. Combat View & Avatar Sizing - FIXED ALIGNMENT */
+            /* 1. HIDE COMBAT ELEMENTS BY DEFAULT */
+            #combat-view, #combat-log {
+                display: none !important; 
+            }
+
+            /* 2. ONLY SHOW THEM WHEN THE VIEW IS ACTIVE */
+            /* This is the ONLY place 'display' should be set to flex/block */
+            #combat-view[style*="display: flex"],
+            #combat-view.active {
+                display: flex !important;
+            }
+
+            #combat-view[style*="display: flex"] ~ #combat-log,
+            #combat-view.active ~ #combat-log {
+                display: block !important;
+            }
+
+            /* 2. POSITIONING: Keep away from all edges */
             #combat-view { 
-                height: 55vh;         /* Reduced height to create a gap from the Bottom UI */
-                top: 75px;           /* Pushed down further to stay away from the Combat Log */
-                display: flex;
+                height: auto !important;
+                top: 45% !important;        /* Centers them vertically between Log and Nav */
+                left: 50% !important;
+                transform: translate(-50%, -50%) !important;
+                
+                width: 80% !important;      /* THE SECRET: 80% width means 10% empty space on left/right */
+                justify-content: space-between !important; /* Pushes them to the edges of that 80% container */
+                
                 flex-direction: row !important; 
-                justify-content: space-between; /* Pushes units toward sides but within padding */
-                align-items: center;            
-                padding: 0 40px;      /* Adds "breathing room" so images don't touch screen edges */
-                width: 85%;           /* Narrowed width to prevent edge-touching */
+                align-items: center !important;
+                z-index: 50;
+            }
+
+            /* 2. AVATARS: Set size here (ONLY ONCE) */
+            #combat-view .avatar, 
+            #combat-view #ui-avatar-combat, 
+            #combat-view .enemy-avatar {
+                width: 150px !important;    /* Fixed typo from 100x to 90px */
+                height: 180px !important;  /* Shrunk height to avoid hitting UI */
+                background-size: cover !important;
+                background-position: center top !important;
+                border: 2px solid var(--gold);
+                border-radius: 8px;
+                min-width: 0 !important;   /* Force browser to allow shrinking */
+                min-height: 0 !important;
+            }
+
+            /* 3. ENEMY SPECIFIC: Override only the border color */
+            #combat-view .enemy-avatar {
+                border: 2px solid #ff4d4d !important; /* This is a nice bright red */
+            }
+
+            /* 4. COMBAT LOG: Positioned at the top */
+            #combat-log { 
+                display: block !important;          /* Force show */
+                position: absolute;
+                top: 5px !important;                /* Distance from very top */
                 left: 50%;
-                transform: translateX(-50%);    
-                max-width: 900px;     
+                transform: translateX(-50%);
+                width: 300px !important;
+                height: 70px !important;
+                z-index: 1000;                      /* Stay on top of everything */
+                font-size: 11px;
+                background: rgba(0, 0, 0, 0.8) !important;
+                border: 2px solid var(--gold) !important;
             }
 
             .unit {
-                display: flex;
-                flex-direction: column;
-                align-items: center;
-                gap: 5px;             /* Space between Name/HP Bar and Avatar */
+                display: flex !important;
+                flex-direction: column !important;
+                align-items: center !important;
+            }
+
+            /* Show log ONLY when combat view is showing */
+            #combat-view[style*="display: flex"] + #combat-log,
+            #combat-view.active + #combat-log {
+                display: block !important;
             }
 
             .hp-bar-container {
-                width: 150px !important; 
-                height: 8px !important; 
-                margin: 2px auto !important;
+                width: 150px !important;            /* Match Avatar Width */
+                height: 10px !important; 
+                margin-bottom: 4px !important;      /* Space between bar and image */
+                display: block !important;          /* Force show */
+                background: #333;
+                border: 1px solid #000;
+            }
+
+            /* Hide hero selection titles/grid while in combat view */
+            #combat-view.active ~ #selection-screen,
+            #combat-view[style*="display: flex"] ~ #selection-screen {
+                display: none !important;
             }
 
             .avatar { 
@@ -308,31 +402,28 @@
                 border-width: 2px;
             }
 
+            #ui-avatar-combat{
+                width: 100px;         /* Slightly smaller to ensure fit on all phone heights */
+                height: 130px; 
+            }
+
+
             /* Remove the specific margins that were pushing units to edges */
             .unit:first-child .avatar,
             .unit:last-child .avatar {
                 margin: 0; 
             }
 
-            /* 4. Combat Log - Fixed Position */
-            #combat-log { 
-                position: absolute;
-                top: 5px; /* Moved up to ensure space between log and avatars */
-                left: 50%;
-                transform: translateX(-50%);
-                background: rgba(0, 0, 0, 0.9); 
-                width: 300px;
-                height: 80px;
-                z-index: 100;
-                border: 2px solid var(--gold);
-                pointer-events: none;
-                font-size: 12px;
-            }
-
             /* 5. UI Spacing Fix */
             #battle-confirm-ui {
                 bottom: 110px !important; 
                 transform: translateX(-50%) scale(0.85)
+            }
+
+            /* CLEANUP: Ensure selection screen is gone during combat */
+            #combat-view.active ~ #selection-screen,
+            #combat-view[style*="display: flex"] ~ #selection-screen {
+                display: none !important;
             }
         }
 
@@ -386,8 +477,8 @@
 
             /* 2. Adjust the Image Sizing */
             .pop-hero-img {
-                width: 140px;               /* Slightly larger for visibility */
-                height: 180px;              /* Taller height to prevent "squishing" */
+                width: 100px;               /* Slightly larger for visibility */
+                height: 140px;              /* Taller height to prevent "squishing" */
                 margin: 10px auto;
                 flex-shrink: 0;             /* Prevents image from shrinking when text is long */
             }
@@ -442,54 +533,54 @@
             }
 
             /* Combat View: Stack vertically to allow larger images */
-        #combat-view {
-            display: flex;
-            flex-direction: column !important; /* Stack Player and Enemy */
-            justify-content: flex-start; 
-            align-items: center;
-            height: calc(100vh - 120px); /* Leave room for Bottom Bar */
-            top: 60px !important;       /* Push below the Top Bar */
-            gap: 5px; 
-            padding-top: 80px;           /* Offset for the Combat Log */
-        }
+            #combat-view {
+                display: flex;
+                flex-direction: column !important; /* Stack Player and Enemy */
+                justify-content: flex-start; 
+                align-items: center;
+                height: calc(100vh - 120px); /* Leave room for Bottom Bar */
+                top: 60px !important;       /* Push below the Top Bar */
+                gap: 5px; 
+                padding-top: 80px;           /* Offset for the Combat Log */
+            }
 
-        /* Fix Combat Log position below Top Bar[cite: 5] */
-        #combat-log {
-            position: absolute;
-            top: 15px !important;        /* Moves it exactly below the Top Bar[cite: 5] */
-            left: 50%;
-            transform: translateX(-50%);
-            width: 95%;
-            height: 60px;
-            z-index: 101;
-            font-size: 12px;
-        }
+            /* Fix Combat Log position below Top Bar[cite: 5] */
+            #combat-log {
+                position: absolute;
+                top: 15px !important;        /* Moves it exactly below the Top Bar[cite: 5] */
+                left: 50%;
+                transform: translateX(-50%);
+                width: 95%;
+                height: 60px;
+                z-index: 101;
+                font-size: 12px;
+            }
 
-        /* Scale Avatars to fill space[cite: 5] */
-        .avatar {
-            width: 160px;  /* Increased from 130px */
-            height: 210px; /* Increased from 170px */
-            border-width: 2px;
-        }
+            /* Scale Avatars to fill space[cite: 5] */
+            .avatar {
+                width: 160px;  /* Increased from 130px */
+                height: 210px; /* Increased from 170px */
+                border-width: 2px;
+            }
 
-        .hp-bar-container {
-            width: 150px; 
-            margin-bottom: 5px;
-        }
+            .hp-bar-container {
+                width: 230px; 
+                margin-bottom: 5px;
+            }
 
-        /* Move Confirm UI to avoid overlapping buttons[cite: 5] */
-        #battle-confirm-ui {
-            bottom: 110px !important;
-            width: 85%;
-            left: 50%;
-            transform: translateX(-50%);
-        }
+            /* Move Confirm UI to avoid overlapping buttons[cite: 5] */
+            #battle-confirm-ui {
+                bottom: 110px !important;
+                width: 85%;
+                left: 50%;
+                transform: translateX(-50%);
+            }
 
-        /* Navigation Bar adjustment[cite: 5] */
-        .bottom-bar {
-            height: 80px;
-            padding: 5px 0;
-        }
+            /* Navigation Bar adjustment[cite: 5] */
+            .bottom-bar {
+                height: 80px;
+                padding: 5px 0;
+            }
         }
 
         /* Add this inside your existing Portrait Media Query block */
@@ -523,6 +614,34 @@
             width: 100%;
             height: 100%;
         }
+
+        .slot-btn {
+            background: #333;
+            color: white;
+            border: 2px solid var(--gold);
+            padding: 15px;
+            border-radius: 8px;
+            cursor: pointer;
+            text-align: left;
+        }
+
+        .slot-btn:hover { background: #444; }
+
+        #save-load-modal {
+            display: none; /* Change from flex to none */
+            position: fixed;
+            z-index: 2000;
+            left: 50%;
+            top: 50%;
+            transform: translate(-50%, -50%);
+            background: var(--card-bg);
+            border: 3px solid var(--gold);
+            padding: 20px;
+            flex-direction: column;
+            align-items: center;
+            width: 90%;
+            max-width: 400px;
+        }
     </style>
 </head>
 <body>
@@ -533,6 +652,9 @@
                 QAYYIM QUEST:<br>RISE OF THE BOIS!
             </h1>
             <div style="display: flex; flex-direction: column; gap: 20px; align-items: center;">
+                <button onclick="openSaveLoadModal('load')" class="menu-btn" style="width: 250px; padding: 20px; font-size: 1.5rem; background: greenyellow; border: none; cursor: pointer; font-weight: bold; border-radius: 8px; margin-top: 20px;">
+                    LOAD GAME
+                </button>
                 <button onclick="goToHeroSelection()" class="menu-btn" style="width: 250px; padding: 20px; font-size: 1.5rem; background: var(--gold); border: none; cursor: pointer; font-weight: bold; border-radius: 8px;">
                     START GAME
                 </button>
@@ -543,7 +665,7 @@
         </div>
     </div>
 
-    <div id="selection-screen" class="screen active">
+    <div id="selection-screen" class="screen">
             <div style="text-align: center; margin-bottom: 30px;">
                 <h1 style="font-size: 3.5rem; color: var(--gold); text-shadow: 3px 3px #000; margin: 0; letter-spacing: 2px;">
                     QAYYIM QUEST: RISE OF THE BOIS
@@ -587,7 +709,7 @@
         <button id="exp-claim-btn" class="claim-btn" style="background:var(--exp-color); color: white;" onclick="claimExp()">+50 EXP</button>
         <button id="rest-btn" class="claim-btn" style="background:var(--mp-color); color: white;" onclick="restAtHome()">REST (Heal HP/MP)</button>
         
-        <button onclick="closeSubMenu()" style="margin-top:10px;">Close</button>
+        <button onclick="closeSubMenu()" class="btn-close" style="margin-top:10px;">Close</button>
     </div>
 
     <div id="travel-screen" class="screen">
@@ -602,18 +724,18 @@
         </div>
     </div>
 
-    <div id="game-screen" class="screen">
+    <div id="game-screen" class="screen" style="display:none;">
         <div class="top-bar">
             <div>NAME: <span id="ui-name" class="stat-val">?</span></div>
             <div>HP: <span id="ui-hp" class="stat-val">?</span>/<span id="ui-maxhp">?</span></div>
             <div>MP: <span id="ui-mp" class="stat-val">?</span>/<span id="ui-maxmp">?</span></div>
             <div>LVL: <span id="ui-lvl" class="stat-val">1</span></div>
-            <div>EXP: <span id="ui-exp" class="stat-val">0</span>/<span id="ui-next-exp">50</span></div>
+            <div>EXP: <span id="ui-exp" class="stat-val">0</span><span id="ui-next-exp"></span></div>
             <div>GOLD: <span id="ui-gold" class="stat-val">0</span></div>
         </div>
 
         <div id="exploration-view" style="text-align:center;">
-            <div class="avatar" style="margin: 0 auto 20px; border-radius: 10px;"></div>
+            <div id="ui-avatar-explore" class="avatar" style="margin: 0 auto 20px; border-radius: 10px;"></div>
             <h2 id="location-text">Home</h2>
         </div>
 
@@ -624,7 +746,7 @@
             <!-- Player Unit -->
             <div class="unit">
                 <p style="margin: 0 0 5px 0; font-weight: bold; color: var(--gold);">PLAYER</p>
-                <div class="avatar"></div>
+                <div id="ui-avatar-combat" class="avatar"></div>
                 <!-- Optional: Player HP bar can go here if you want it visible in combat -->
             </div>
 
@@ -676,6 +798,12 @@
                     <button onclick="restartGameFlow()" style="width: 100%; padding: 14px; background: var(--gold); color: black; border: none; font-weight: bold; border-radius: 5px; cursor: pointer; text-transform: uppercase;">
                         MAIN MENU
                     </button>
+                    <button onclick="openSaveLoadModal('save')" class="menu-btn" style="background: #2e7d32; color: white;">
+                        SAVE GAME
+                    </button>
+                    <button onclick="openSaveLoadModal('load')" class="menu-btn" style="background: #1565c0; color: white;">
+                        LOAD GAME
+                    </button>
                     <button onclick="quitGame()" style="width: 100%; padding: 14px; background: #cc3333; color: white; border: none; font-weight: bold; border-radius: 5px; cursor: pointer; text-transform: uppercase;">
                         QUIT GAME
                     </button>
@@ -684,6 +812,24 @@
                     </button>
                 </div>
             </div>
+        </div>
+    </div>
+
+        <!--SAVES AND LOADS-->
+        <div id="save-load-modal" class="modal" style="z-index: 2000;">
+            <h2 id="save-load-title" style="color: var(--gold);">CHOOSE A SLOT</h2>
+            <div id="slots-container" style="display: flex; flex-direction: column; gap: 15px; width: 100%;">
+                <button class="slot-btn" onclick="handleSlotClick(1)">
+                    <span>Slot 1</span><br><small id="slot-1-info">Empty</small>
+                </button>
+                <button class="slot-btn" onclick="handleSlotClick(2)">
+                    <span>Slot 2</span><br><small id="slot-2-info">Empty</small>
+                </button>
+                <button class="slot-btn" onclick="handleSlotClick(3)">
+                    <span>Slot 3</span><br><small id="slot-3-info">Empty</small>
+                </button>
+            </div>
+            <button onclick="closeSaveLoadModal()" style="margin-top: 20px; background: #444; color: white; width: 100%;">CANCEL</button>
         </div>
 
         <div class="bottom-bar" id="combat-nav" style="display:none;">
@@ -696,6 +842,174 @@
     </div>
 
     <script>
+
+        //SAVES AND LOADS LOGIC
+        let saveMode = 'save'; 
+        window.player = window.player || {};
+
+        function openSaveLoadModal(mode) {
+            saveMode = mode;
+            const modal = document.getElementById('save-load-modal');
+            if (modal) {
+                modal.style.display = 'flex';
+                updateSlotLabels(); // Refresh the list of saved games
+                const title = document.getElementById('save-load-title');
+                if (title) title.innerText = mode === 'save' ? 'SAVE GAME' : 'LOAD GAME';
+            }
+        }
+
+        function closeSaveLoadModal() {
+            document.getElementById('save-load-modal').style.display = 'none';
+        }
+
+        function updateSlotLabels() {
+            for (let i = 1; i <= 3; i++) {
+                const savedData = localStorage.getItem('QayyimQuest_Slot' + i);
+                const label = document.getElementById('slot-' + i + '-info');
+                
+                if (savedData) {
+                    try {
+                        const data = JSON.parse(savedData);
+                        // Use || to provide fallbacks if a property is missing
+                        const name = data.name || "Unknown";
+                        const level = data.lvl || data.level || 1; 
+                        const hClass = data.heroClass || "Adventurer";
+                        
+                        label.innerText = `${name} - Lvl ${level} ${hClass}`;
+                        label.style.color = "var(--gold)";
+                    } catch (e) {
+                        label.innerText = "Corrupted Data";
+                    }
+                } else {
+                    label.innerText = "Empty Slot";
+                    label.style.color = "#888";
+                }
+            }
+        }
+
+        function handleSlotClick(slot) {
+            const slotKey = 'QayyimQuest_Slot' + slot;
+            const existingData = localStorage.getItem(slotKey);
+
+            if (saveMode === 'save') {
+                // Check if the slot has data already
+                if (existingData) {
+                    // Try to parse the name of the character currently in that slot for the message
+                    let existingName = "another character";
+                    try {
+                        const parsed = JSON.parse(existingData);
+                        existingName = parsed.name || "Unknown";
+                    } catch(e) {}
+
+                    // Ask for confirmation
+                    const confirmOverwrite = confirm(`Slot ${slot} already contains "${existingName}". Do you want to overwrite it with your current progress?`);
+                    
+                    if (confirmOverwrite) {
+                        saveGame(slot);
+                    }
+                } else {
+                    // Slot is empty, save immediately
+                    saveGame(slot);
+                }
+            } else {
+                // Logic for Loading
+                if (existingData) {
+                    loadGame(slot);
+                } else {
+                    alert("This slot is empty!");
+                }
+            }
+        }
+
+        function saveGame(slot) {
+            const slotKey = 'QayyimQuest_Slot' + slot;
+            
+            // Ensure we are saving the GLOBAL window.player
+            const dataToSave = JSON.stringify(window.player);
+            localStorage.setItem(slotKey, dataToSave);
+            
+            alert(`Game saved to Slot ${slot}!`);
+            updateSlotLabels(); // Refresh the text in the modal
+        }
+
+       function loadGame(slot) {
+            const savedData = localStorage.getItem('QayyimQuest_Slot' + slot);
+            
+            if (!savedData) {
+                alert("Slot " + slot + " is empty!");
+                return;
+            }
+
+            // 1. Restore Player Data
+            const data = JSON.parse(savedData);
+            window.player = data; 
+
+            // 2. Hide ALL potential overlays (added 'save-modal' and 'save-load-modal')
+            const screens = ['main-menu', 'selection-screen', 'travel-screen', 'combat-view', 'save-modal', 'save-load-modal'];
+            screens.forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.style.display = 'none';
+            });
+
+            // 3. Show Game Screen and Exploration View
+            const gameScreen = document.getElementById('game-screen');
+            const explorationView = document.getElementById('exploration-view');
+            const navUI = document.getElementById('navigation-ui'); // Ensure buttons show up
+            
+            if (gameScreen) {
+                gameScreen.style.display = 'flex';
+                gameScreen.classList.add('active');
+            }
+            if (explorationView) {
+                explorationView.style.display = 'block';
+            }
+            if (navUI) {
+                navUI.style.display = 'grid'; // Or 'flex' depending on your CSS
+            }
+
+            // 4. Update UI Text immediately
+            updateUI();
+
+            // 5. THE IMAGE FIX: Updated to handle both Exploration and Combat avatars
+            setTimeout(() => {
+                if (window.player && window.player.selectedHero) {
+                    const heroImg = window.player.selectedHero.img;
+                    
+                    // Find every avatar that isn't an enemy
+                    const avatars = document.querySelectorAll('.avatar, #ui-avatar-combat');
+                    avatars.forEach(av => {
+                        if (!av.classList.contains('enemy-avatar')) {
+                            av.style.backgroundImage = "url('" + heroImg + "')";
+                            av.style.backgroundSize = 'cover';
+                            av.style.backgroundPosition = 'center top';
+                            av.style.backgroundColor = 'transparent';
+                        }
+                    });
+
+                    // Update Name Displays
+                    const nameDisplay = document.getElementById('ui-name');
+                    if (nameDisplay) nameDisplay.innerText = window.player.name;
+                    
+                    const combatPlayerName = document.querySelector('#combat-view .unit p');
+                    if (combatPlayerName) combatPlayerName.innerText = window.player.name.toUpperCase();
+                }
+            }, 100);
+
+            // 6. Close Modal and Cleanup
+            if (typeof closeSaveLoadModal === "function") {
+                closeSaveLoadModal();
+            } else if (typeof closeSaveModal === "function") {
+                closeSaveModal();
+            }
+            
+            alert("Welcome back, " + window.player.name + "!");
+
+            // Set the location (Defaulting to Alley Way Central if none saved)
+            if (typeof showLocationMenu === "function") {
+                showLocationMenu(window.player.currentLocation || "Alley Way Central");
+            }
+        }
+
         // Function to move from Main Menu to Hero Selection
         function goToHeroSelection() {
             // 1. Hide the Main Menu
@@ -798,7 +1112,7 @@
         const heroData = {
             "Jacob": {
                 description: "A Cob caster from Cornwalling. Utilizes cobs and maizes to pop off every foe he encounters.",
-                hp: 100, mp: 100,
+                hp: 100, mp: 100, img: "images/Jacob.png",
                 abilities: [
                     { id: 1, name: "Cobsicles", cost: 15, type: "dmg", val: [10, 20], desc: "Casts cobsicles and hurls them dealing 10-20 dmg. Cost: 15 MP" },
                     { id: 2, name: "cluster cobs", cost: 30, type: "dmg", val: [25, 30], desc: "Throws a cob that pops into explosive popcorn dealing 25-30 dmg. Cost: 30 MP" },
@@ -808,7 +1122,7 @@
             },
             "Rah Jay": {
                 description: "A time manipulator sorcerer from More Ant Town. Uses time manipulation to transfer locations and explored several cities and schoole around the map.",
-                hp: 100, mp: 105,
+                hp: 100, mp: 105, img: "images/Rah Jay.png",
                 abilities: [
                     { id: 1, name: "Chronostrike", cost: 15, type: "dmg", val: [15, 15], desc: "Stops time briefly to strike. Deals 15 dmg. Cost: 15 MP" },
                     { id: 2, name: "Time frame", cost: 30, type: "dmg_stun", val: [25, 25], stun: [1], desc: "Attacks in a frame of time without being attacked. Deals 25 dmg. Cost: 30 MP" },
@@ -818,7 +1132,7 @@
             },
             "Baurgona": {
                 description: "A famous gambling gunslinger of the Capital Region. Utilizes chances and luck in his favor.",
-                hp: 100, mp: 100,
+                hp: 100, mp: 100, img: "images/Baurgona.png",
                 abilities: [
                     { id: 1, name: "Lucky Shot", cost: 20, type: "chance_dmg", val1: [15, 20], chance1: 0.7, val2: [20, 30], chance2: 0.3, desc: "70% for 15-20 dmg, 30% for 20-25 dmg. Cost: 20 MP" },
                     { id: 2, name: "Hit or miss", cost: 25, type: "dmg_stun_chance", val: [15, 25], stunChance: 0.2, desc: "Deals 15-25 dmg with a 20% chance to end enemy turn. Cost: 25 MP" },
@@ -828,7 +1142,7 @@
             },
             "Zhadid": {
                 description: "An infamous rogue thief wanted dead or alive in the Capital Region. Utilizes invisibility for stealthy action.",
-                hp: 100, mp: 100,
+                hp: 100, mp: 100, img: "images/Zhadid.png",
                 abilities: [
                     { id: 1, name: "Backstab", cost: 15, type: "dmg", val: [5, 30], desc: "Vanish and stab from behind. Deals 5-30 dmg. Cost: 15 MP" },
                     { id: 2, name: "Swifty hands", cost: 30, type: "dmg_steal", val: [10, 20], gold: 5, stealChance: 0.2, desc: "Deals 10-20 and a chance to steals 5 gold. Cost: 30 MP" },
@@ -838,7 +1152,7 @@
             },
             "Hymen": {
                 description: "A wise oracle with eidetic memory observed many history and knowledge of the world. Traces complex spells and ancient techniques.",
-                hp: 100, mp: 105,
+                hp: 100, mp: 105, img: "images/Hymen.png",
                 abilities: [
                     { id: 1, name: "Precise Strike", cost: 15, type: "dmg_dodge_chance", val: [10, 20], dodgeChance: 0.15, desc: "Deals 10-20 dmg with a 15% chance to dodge next attack. Cost: 15 MP" },
                     { id: 2, name: "Elemental force", cost: 35, type: "dmg", val: [15, 35], desc: "Complex elemental magic dealing 15-30 dmg. Cost: 35 MP" },
@@ -848,7 +1162,7 @@
             },
             "Amlan": {
                 description: "A superhuman with enhanced senses escaped from Moor Ant Town's Research Facility. Utilizes improved strength and magic.",
-                hp: 100, mp: 100,
+                hp: 100, mp: 100, img: "images/Amlan.png",
                 abilities: [
                     { id: 1, name: "Powering Blow", cost: 10, type: "dmg_extra_chance", val: [15, 15], bonusVal: 5, chance: 0.1, desc: "Inflict a strong blow dealing 15 dmg. Cost: 10 MP" },
                     { id: 2, name: "Enhancement", cost: 25, type: "buff_dmg_mp", val: 10, mpReduce: 5, duration: 2, desc: "Increases dmg by 10 and reduces MP costs by 5 for 2 turns. Cost: 35 MP" },
@@ -858,7 +1172,7 @@
             },
             "Lil Nas": {
                 description: "A time manipulator sorcerer from Remain Master of Time Management. Hastens and slows nature around him.",
-                hp: 100, mp: 100,
+                hp: 100, mp: 100, img: "images/Lil Nas.png",
                 abilities: [
                     { id: 1, name: "Slowness", cost: 10, type: "dmg_debuff", val: [10, 15], debuff: 5, desc: "Deals 10-15 dmg and lowers enemy dmg by 5. Cost: 10 MP" },
                     { id: 2, name: "Hastening", cost: 30, type: "crit_stun_chance", val: [15, 25], stunChance: 0.2, desc: "Critical strike 20-30 dmg and 20% stun chance. Cost: 30 MP" },
@@ -868,7 +1182,7 @@
             },
             "Eren Doug": {
                 description: "A time manipulator sorcerer who was driven out of chronosphere trying to acquire peace in Melee Gun City. Specializes in halting the flow of time around him.",
-                hp: 100, mp: 105,
+                hp: 100, mp: 105, img: "images/Eren Doug.png",
                 abilities: [
                     { id: 1, name: "Chronostrike", cost: 15, type: "dmg", val: [15, 15], desc: "Stops time briefly to strike. Deals 15 dmg. Cost: 15 MP" },
                     { id: 2, name: "Back Track", cost: 35, type: "heal_dmg", heal: [10, 15], val: [20, 25], desc: "Heals 10-15 HP and deals 20-25 dmg. Cost: 35 MP" },
@@ -878,7 +1192,7 @@
             },
             "Akhil": {
                 description: "A Magic blood fighter seeking for the end of period cramps using his blood majestic physique. Utilizes blood manipulation.",
-                hp: 90, mp: 100,
+                hp: 90, mp: 100, img: "images/Akhil.png",
                 abilities: [
                     { id: 1, name: "Bloody fists", cost: 20, type: "self_dmg_attack", val: [20, 25], selfDmg: 5, desc: "Deals 20-25 dmg but takes away 5 HP from player. Cost: 20 MP" },
                     { id: 2, name: "Life Steal", cost: 35, type: "lifesteal", val: [15, 20], heal: 25, desc: "Deals 15-20 dmg and heals player 25 HP. Cost: 35 MP" },
@@ -889,7 +1203,7 @@
             "Wassim": {
                 
                 description: "A time manipulator sorcerer who was defeated in his greatest battle and reborn into a legend. Uses time manipulation to correct his mistakes",
-                hp: 100, mp: 105,
+                hp: 100, mp: 105, img: "images/Wassim.png",
                 abilities: [
                     { id: 1, name: "Chronostrike", cost: 15, type: "dmg", val: [15, 15], desc: "Stops time briefly to strike. Deals 15 dmg. Cost: 15 MP" },
                     { id: 2, name: "Back Track", cost: 35, type: "heal_dmg", heal: [10, 15], val: [15, 25], desc: "Heals 10-15 HP and deals 20-25 dmg. Cost: 35 MP" },
@@ -899,7 +1213,7 @@
             },
             "Basalt": {
                 description: "A merciless punisher of the Capital Region using chains of torment. Inflicts unbearable pain until death to bring out justice.",
-                hp: 100, mp: 100,
+                hp: 100, mp: 100, img: "images/Basalt.png",
                 abilities: [
                     { id: 1, name: "Burning Chains", cost: 15, type: "dmg", val: [10, 30], desc: "Hurls hot chains dealing 10-30 dmg. Cost: 15 MP" },
                     { id: 2, name: "Chained fool", cost: 30, type: "dmg_debuff", val: [10, 20], debuff: 15, desc: "Deals 10-20 dmg and lowers enemy dmg by 15. Cost: 30 MP" },
@@ -909,7 +1223,7 @@
             },
             "G-man": {
                 description: "A high wise noble scholar of AKIC mastering the four fields of knowledge using it to write his own laws for his advantage",
-                hp: 100, mp: 100,
+                hp: 100, mp: 100, img: "images/G-man.png",
                 abilities: [
                     { id: 1, name: "G-force", cost: 20, type: "dmg", val: [15, 25], desc: "Strong blasting force dealing 15-25 dmg. Cost: 20 MP" },
                     { id: 2, name: "Abstract Reasoning", cost: 35, type: "dmg_stun", val: [15, 30], stun: 2, desc: "Confusion field deals 15 dmg and skips enemy turn. Cost: 35 MP" },
@@ -919,7 +1233,7 @@
             },
             "Pow-pau": {
                 description: "A powerful sage using sacred spells from Beyond his Journey. Utilizes Zoltraak Magic to defeat any evil human or demon.",
-                hp: 100, mp: 100,
+                hp: 100, mp: 100, img: "images/Pow-pau.png",
                 abilities: [
                     { id: 1, name: "Dark and Light Zoltraak", cost: 15, type: "dmg", val: [10, 25], desc: "Beams of magic dealing 10-25 dmg. Cost: 15 MP" },
                     { id: 2, name: "Magic Barrier", cost: 25, type: "block_debuff", val: 0, debuff: 10, duration: 3, desc: "Blocks next attack and reduces enemy dmg by 10 for 3 turns. Cost: 25 MP" },
@@ -1042,9 +1356,10 @@
                 { lvl: 3, cost: 100, reward: 15, time: 145, clicks: 500, done: false }
             ],
             sparring: [
-                { lvl: 1, cost: 25, reward: 5, enemy: { name: "Elite", hp: 100, dmg: [10, 20] }, done: false },
-                { lvl: 2, cost: 50, reward: 10, enemy: { name: "Master", hp: 125, dmg: [10, 30] }, done: false },
-                { lvl: 3, cost: 100, reward: 15, enemy: { name: "Grand Master", hp: 200, dmg: [10, 50] }, done: false }
+                // Add the image filenames here
+                { lvl: 1, cost: 25, reward: 5, enemy: { name: "Elite", hp: 100, dmg: [10, 20], img: "images/Elite.png" }, done: false },
+                { lvl: 2, cost: 50, reward: 10, enemy: { name: "Master", hp: 125, dmg: [10, 30], img: "images/Master.png" }, done: false },
+                { lvl: 3, cost: 100, reward: 15, enemy: { name: "Grand Master", hp: 200, dmg: [10, 50], img: "images/Grand Master.png" }, done: false }
             ]
         };
 
@@ -1053,19 +1368,25 @@
         /* =========================================
            GLOBAL STATE
            ========================================= */
+
         let player = { 
             name: "", hp: 100, maxHp: 100, mp: 100, maxMp: 100, 
-            gold: 0, exp: 0, lvl: 1, strBuff: 0, strTurns: 0, 
+            gold: 10000, exp: 0, lvl: 1, strBuff: 0, strTurns: 0, 
             bonusDmg: 0, selectedHero: null,
             gymLvlLift: 1, gymLvlSpar: 1,
             dodgeNext: false, freeMPTurns: 0, enemyDmgDebuff: 0, enemyDebuffTurns: 0,
             equippedAccessory: null,
             gymHpBonus: 0, 
             gymDmgBonus: 0,
+            schoolMpBonus: 0,
+            inventory: {},
+            currentLocation: "",
+            currentField: ""
         };
+
+          window.player = player
         
         let enemy = { name: "", hp: 0, maxHp: 0, dmg: [0,0], gold: 0, exp: 0 };
-        let inventory = {}; 
         let isCombatActive = false;
         let isPlayerTurn = true;
         let clickTimer = null;
@@ -1146,7 +1467,26 @@
 
         //Command Console 
         function openDevConsole() { 
-                const input = prompt("");
+                const input = prompt(`UPDATE LOG (1.0.0)
+
+-Gym bugs fixed (not adding HP after completing a session)
+-Gym lowered weight lifting timer
+-fixed GYM UI showing in the Gym Menu after a session
+
+-sparring will now allow you to give up or loose without any resistance or loss of gold
+-completing a sparring session will now add dmg to base dmg
+-sparring trainers now have their own images
+
+-fixed school UI
+-lowered enrollment price to 80
+
+-hero preview menu will now close after choosing a hero
+-removed confirm button showing in the inventory
+-improved close button style
+-dying upon fleeing will not reset and return you to Hero Selection
+
+-Major UI formatting now more mobile friendly playable both in portrait and landscape mode
+-added Main Menu with Start Game, Load Game, Quit Game and Menu in Game screen for Save Game and go to Main Menu to Restart Game`);
                 if (input !== null) {
                     processCommand(input.trim());
                 }
@@ -1201,33 +1541,54 @@
             document.getElementById('popup').style.display = 'block';
         }
 
-       
-
         function selectHero(name) {
-            const data = heroData[name];
-            player.selectedHero = data;
-            player.name = name;
-            player.hp = player.maxHp = data.hp;
-            player.mp = player.maxMp = data.mp;
+            // 1. Change 'heroData' to 'heroes' to match your data object name
+            const data = heroData[name]; 
+            if (!data) return; 
 
-            // --- ADD THESE LINES TO SET YOUR IN-GAME AVATAR ---
+            if (!window.player) window.player = {};
+
+            // 2. Attach the data to the player. 
+            // This makes sure the 'img' property is saved into LocalStorage later.
+            window.player.selectedHero = data;
+            window.player.name = name; 
+            window.player.hp = data.hp;
+            window.player.maxHp = data.hp;
+            window.player.mp = data.mp;
+            window.player.maxMp = data.mp;
+
+            
+
+            // 3. Update the UI Text
+            const uiNameElement = document.getElementById('ui-name');
+            if (uiNameElement) {
+                uiNameElement.innerText = name;
+            }
+
+            // 4. Update all Avatar images using the 'img' property from your data
+            // Inside selectHero(name)
             const avatars = document.querySelectorAll('.avatar');
             avatars.forEach(av => {
-                av.style.backgroundImage = `url('images/${name}.png')`;
-                av.style.backgroundSize = 'cover';
-                av.style.backgroundPosition = 'center';
+                // We add encoded quotes and use the exact string from your hero object
+                if (data.img) {
+                    av.style.backgroundImage = "url('" + data.img + "')";
+                    av.style.backgroundSize = 'cover';
+                    av.style.backgroundPosition = 'center';
+                    av.style.backgroundColor = 'transparent';
+                }
             });
-            // -------------------------------------------------
-            // Hide selection screen
-            document.getElementById('selection-screen').classList.remove('active');
-            document.getElementById('selection-screen').style.display = 'none';
 
-            // Ensure we start in Exploration mode, not Combat mode
+            // 5. Screen Transitions
+            const selectionScreen = document.getElementById('selection-screen');
+            if (selectionScreen) {
+                selectionScreen.classList.remove('active');
+                selectionScreen.style.display = 'none';
+            }
+
             document.getElementById('exploration-view').style.display = 'block';
             document.getElementById('combat-view').style.display = 'none';
             document.getElementById('standard-nav').style.display = 'flex';
             document.getElementById('combat-nav').style.display = 'none';
-            // --- FIX ENDS HERE ---
             
             closePopup();
             transitionToCutscene();
@@ -1292,11 +1653,11 @@
 
             // --- GRANTING THE REWARD ---
             if (goldAmount > 0) {
-                player.gold += goldAmount;
+                window.player.gold += goldAmount;
                 alert(`You found ${goldAmount} Gold lying on the ground!`);
             } else if (itemName !== "") {
                 // Add to the same inventory object used by your Shop/Inventory
-                inventory[itemName] = (inventory[itemName] || 0) + 1;
+                window.player.inventory[itemName] = (window.player.inventory[itemName] || 0) + 1;
                 alert(`You found an item: ${itemName}!`);
             }
 
@@ -1343,7 +1704,7 @@
                     if (confirm("STICK IT UP SUCKER! You are getting mugged!\n\n[OK] to Surrender (Lose Gold)\n[Cancel] to Fight Back")) {
                         // Option A: Surrender
                         let lostGold = Math.floor(Math.random() * 21) + 10; // 10-30 gold
-                        player.gold = Math.max(0, player.gold - lostGold);
+                        window.player.gold = Math.max(0, window.player.gold - lostGold);
                         alert(`You gave up your gold... lost ${lostGold}g.`);
                         updateUI();
                     } else {
@@ -1400,8 +1761,8 @@
                 case 2: // MSG2: The Drifter
                     if (confirm("Hello kind Sir, any spare change?\n\n[OK] Give 10-15g \n[Cancel] Refuse")) {
                         let gift = Math.floor(Math.random() * 6) + 10; // 10-15
-                        if (player.gold >= gift) {
-                            player.gold -= gift;
+                        if (window.player.gold >= gift) {
+                            window.player.gold -= gift;
                             alert("Oh, bless you kind sir!");
                             if (Math.random() < 0.25) { // 25% chance for EXP
                                 addExp(25);
@@ -1460,11 +1821,11 @@
 
             if (playerWins === 2) {
                 let prize = Math.floor(Math.random() * 26) + 10; // 10-35
-                player.gold += prize;
+                window.player.gold += prize;
                 alert(`Congratulations! You won the game and ${prize} gold!`);
             } else {
                 let loss = Math.floor(Math.random() * 6) + 10; // 10-15
-                player.gold = Math.max(0, player.gold - loss);
+                window.player.gold = Math.max(0, window.player.gold - loss);
                 alert(`You lost the game... and ${loss} gold.`);
             }
             updateUI();
@@ -1472,104 +1833,147 @@
 
         function nothingEvent() {
             document.getElementById('menu-desc').innerText = "You looked around, but found nothing of interest.";
+            alert("You have explored the area but found nothing...");
         }
 
        function updateUI() {
-    // --- 1. DYNAMIC STAT CALCULATIONS ---
-    
-    // Base values from hero selection
-    let baseMaxHp = player.selectedHero ? player.selectedHero.hp : 100;
-    let baseMaxMp = player.selectedHero ? player.selectedHero.mp : 100;
-    
-    let mpBonus = 0;
-    let hpBonus = 0;
-    let dmgBonus = 0;
+        if (!window.player || !window.player.selectedHero) return;
 
-    // A. Apply bonuses from inventory items
-    if (inventory["Rubik's Cube"] > 0) {
-        mpBonus = 15;
+        // --- 1. STAT CALCULATIONS ---
+        let baseMaxHp = window.player.selectedHero.hp || 100;
+        let baseMaxMp = window.player.selectedHero.mp || 100;
+        const inv = window.player.inventory || {};
+
+        const expElement = document.getElementById('ui-exp');
+        const expFill = document.getElementById('exp-fill'); // The bar itself
+
+        if (window.player.lvl >= 5) {
+            // 1. If Level 5 or higher, always show MAXED
+            if (expElement) expElement.innerText = "MAXED";
+            if (expFill) expFill.style.width = "100%";
+            
+            // Safety: keep exp at 0 so no weird numbers exist in the background
+            window.player.exp = 0; 
+        } else {
+            // 2. Get the requirement for the CURRENT level
+            // If lvl is 1, req is expRequirements[1] (100)
+            // If lvl is 4, req is expRequirements[4] (250)
+            let req = expRequirements[window.player.lvl];
+
+            // 3. Ensure the display never shows more than the requirement (e.g., no 60/50)
+            let currentExp = Math.min(window.player.exp, req);
+            
+            if (expElement) {
+                expElement.innerText = `${Math.round(currentExp)} / ${req}`;
+            }
+            
+            if (expFill) {
+                let percent = (currentExp / req) * 100;
+                expFill.style.width = percent + "%";
+            }
+        }
+
+        let mpBonus = (inv["Rubik's Cube"] > 0) ? 15 : 0;
+        let hpBonus = (inv["Zumba Video"] > 0) ? 20 : 0;
+        let dmgBonus = (inv["Baston"] > 0) ? 15 : 0;
+
+        window.player.maxHp = baseMaxHp + hpBonus + (window.player.gymHpBonus || 0);
+        window.player.maxMp = baseMaxMp + mpBonus + (window.player.schoolMpBonus || 0);
+        window.player.bonusDmg = dmgBonus + (window.player.gymDmgBonus || 0);
+
+        // Safety checks
+        if (window.player.hp > window.player.maxHp) window.player.hp = window.player.maxHp;
+        if (window.player.mp > window.player.maxMp) window.player.mp = window.player.maxMp;
+
+        // --- 2. UPDATE TEXT & BARS ---
+        document.getElementById('ui-hp').innerText = Math.round(window.player.hp);
+        document.getElementById('ui-maxhp').innerText = window.player.maxHp;
+        document.getElementById('ui-mp').innerText = Math.round(window.player.mp);
+        document.getElementById('ui-maxmp').innerText = window.player.maxMp;
+        document.getElementById('ui-gold').innerText = window.player.gold;
+        document.getElementById('ui-lvl').innerText = window.player.lvl;
+
+        if (document.getElementById('hp-fill')) {
+            document.getElementById('hp-fill').style.width = (window.player.hp / window.player.maxHp * 100) + "%";
+        }
+        if (document.getElementById('mp-fill')) {
+            document.getElementById('mp-fill').style.width = (window.player.mp / window.player.maxMp * 100) + "%";
+        }
+
+        // --- 3. ABILITIES ---
+        document.getElementById('atk-1').innerText = window.player.selectedHero.abilities[0].name;
+        document.getElementById('atk-2').innerText = window.player.selectedHero.abilities[1].name;
+        document.getElementById('atk-2').disabled = (window.player.lvl < 3);
+        document.getElementById('atk-3').innerText = window.player.selectedHero.abilities[2].name;
+        document.getElementById('atk-3').disabled = (window.player.lvl < 5);
+
+        // --- 4. FORCE AVATARS ---
+        forceAvatarUpdate();
     }
-    if (inventory["Zumba Video"] > 0) {
-        hpBonus = 20;
-    }
-    if (inventory["Baston"] > 0) {
-        dmgBonus = 15;
-    }
 
-    // B. INTEGRATE GYM & SPARRING BONUSES
-    // We add the persistent gym rewards to the current calculation
-    player.maxHp = baseMaxHp + hpBonus + (player.gymHpBonus || 0);
-    player.maxMp = baseMaxMp + mpBonus;
+        // Separate helper to ensure images are forced onto the divs
+        function forceAvatarUpdate() {
+            if (!window.player || !window.player.selectedHero) return;
 
-    // Total damage includes item bonus + permanent sparring bonus
-    player.bonusDmg = dmgBonus + (player.gymDmgBonus || 0);
+            // Use the image path stored in the hero data
+            const heroImg = window.player.selectedHero.img;
+            
+            // 1. Try to find the specific IDs
+            const exploreAvatar = document.getElementById('ui-avatar-explore');
+            const combatAvatar = document.getElementById('ui-avatar-combat');
 
-    // Safety checks: current HP/MP shouldn't exceed new Max
-    if (player.hp > player.maxHp) player.hp = player.maxHp;
-    if (player.mp > player.maxMp) player.mp = player.maxMp;
+            // 2. If IDs are missing, find all elements with the 'avatar' class
+            const allAvatars = document.querySelectorAll('.avatar');
 
-    // --- 2. UPDATE TEXT ELEMENTS ---
-    document.getElementById('ui-hp').innerText = Math.round(player.hp);
-    document.getElementById('ui-maxhp').innerText = player.maxHp;
-    document.getElementById('ui-mp').innerText = Math.round(player.mp);
-    document.getElementById('ui-maxmp').innerText = player.maxMp;
-    document.getElementById('ui-gold').innerText = player.gold;
-    document.getElementById('ui-lvl').innerText = player.lvl;
-    
-    // --- 3. UPDATE VISUAL BARS ---
-    if (document.getElementById('hp-fill')) {
-        document.getElementById('hp-fill').style.width = (player.hp / player.maxHp * 100) + "%";
-    }
-    if (document.getElementById('mp-fill')) {
-        document.getElementById('mp-fill').style.width = (player.mp / player.maxMp * 100) + "%";
-    }
-
-    // --- 4. EXPERIENCE & LEVELS ---
-    const expLabel = document.getElementById('ui-exp');
-    const nextExpLabel = document.getElementById('ui-next-exp');
-    
-    if (player.lvl >= 5) {
-        expLabel.innerText = "MAXED";
-        nextExpLabel.innerText = "";
-    } else {
-        expLabel.innerText = player.exp;
-        nextExpLabel.innerText = expRequirements[player.lvl];
-    }
-
-    // --- 5. COMBAT BUTTONS ---
-    document.getElementById('atk-2').disabled = (player.lvl < 3);
-    document.getElementById('atk-3').disabled = (player.lvl < 5);
-
-    if(player.selectedHero) {
-        document.getElementById('atk-1').innerText = player.selectedHero.abilities[0].name;
-        document.getElementById('atk-2').innerText = player.selectedHero.abilities[1].name;
-        document.getElementById('atk-3').innerText = player.selectedHero.abilities[2].name;
-    }
-}
+            allAvatars.forEach(av => {
+                // Ensure we don't accidentally overwrite the enemy image
+                if (!av.classList.contains('enemy-avatar')) {
+                    av.style.backgroundImage = `url('${heroImg}')`;
+                    av.style.backgroundSize = "cover";
+                    av.style.backgroundPosition = "center";
+                    av.style.backgroundColor = "transparent"; // Remove the gray box
+                }
+            });
+            
+            console.log("Avatar updated to: " + heroImg);
+        }
 
         function addExp(amount) {
-            if (player.lvl >= 5) return;
-            player.exp += amount;
-            let req = expRequirements[player.lvl];
-            while (player.exp >= req && player.lvl < 5) {
-                player.exp -= req;
-                player.lvl++;
+            if (window.player.lvl >= 5) return;
+
+            window.player.exp += amount;
+            
+            // Check requirements based on CURRENT level
+            let req = expRequirements[window.player.lvl];
+
+            while (window.player.lvl < 5 && window.player.exp >= req) {
+                window.player.exp -= req;
+                window.player.lvl++;
+                
                 applyLevelUpStats();
-                req = expRequirements[player.lvl];
-                alert(`Level Up! You are now Level ${player.lvl}`);
+
+                if (window.player.lvl >= 5) {
+                    window.player.exp = 0;
+                    alert("MAX LEVEL REACHED!");
+                    break; 
+                }
+                
+                // Update requirement for the NEXT loop iteration
+                req = expRequirements[window.player.lvl];
+                alert(`Level Up! You are now Level ${window.player.lvl}`);
             }
             updateUI();
         }
 
         function applyLevelUpStats() {
-            const scale = player.selectedHero.scaling[player.lvl];
+            const scale = window.player.selectedHero.scaling[window.player.lvl];
             if(scale) {
-                if(scale.hp) player.maxHp += scale.hp;
-                if(scale.mp) player.maxMp += scale.mp;
-                if(scale.dmgBonus) player.bonusDmg += scale.dmgBonus;
+                if(scale.hp) window.player.maxHp += scale.hp;
+                if(scale.mp) window.player.maxMp += scale.mp;
+                if(scale.dmgBonus) window.player.bonusDmg += scale.dmgBonus;
             }
-            player.hp = player.maxHp;
-            player.mp = player.maxMp;
+            window.player.hp = window.player.maxHp;
+            window.player.mp = window.player.maxMp;
         }
 
         /* =========================================
@@ -1678,14 +2082,14 @@
             const content = document.getElementById('menu-content');
             content.innerHTML = "";
             const data = gymData[type];
-            const playerLvl = type === "lifting" ? player.gymLvlLift : player.gymLvlSpar;
+            const playerLvl = type === "lifting" ? window.player.gymLvlLift : window.player.gymLvlSpar;
 
             data.forEach((lvlObj, idx) => {
                 const btn = document.createElement('div');
                 btn.className = "menu-item";
                 
                 // --- ADD DISCOUNT LOGIC HERE ---
-                const hasDiscount = inventory["Gym discount"] > 0;
+                const hasDiscount = window.player.inventory["Gym discount"] > 0;
                 const actualCost = hasDiscount ? Math.floor(lvlObj.cost * 0.4) : lvlObj.cost; // 60% off means pay 40%
 
                 let statusTxt = lvlObj.done ? " [COMPLETED]" : "";
@@ -1695,7 +2099,7 @@
                 
                 btn.onclick = () => {
                     if (lvlObj.lvl > playerLvl) { alert("Complete previous levels first!"); return; }
-                    if (player.gold < actualCost) { alert("Not enough gold!"); return; }
+                    if (window.player.gold < actualCost) { alert("Not enough gold!"); return; }
                     
                     const promptMsg = hasDiscount 
                         ? `Gym discount applied! Start Level ${lvlObj.lvl} ${type} for ${actualCost}g?`
@@ -1703,9 +2107,9 @@
 
                     if (confirm(promptMsg)) {
                         // Deduct the calculated cost and consume the item
-                        player.gold -= actualCost;
+                        window.player.gold -= actualCost;
                         if (hasDiscount) {
-                            inventory["Gym discount"] -= 1;
+                            window.player.inventory["Gym discount"] -= 1;
                             alert("Gym discount used!");
                         }
                         updateUI();
@@ -1755,9 +2159,9 @@
                     document.getElementById('lift-btn').style.display = "none";
                     
                     if (!lvlObj.done) {
-                        player.gymHpBonus += lvlObj.reward; // Save the bonus persistently
+                        window.player.gymHpBonus += lvlObj.reward; // Save the bonus persistently
                         lvlObj.done = true;
-                        if (player.gymLvlLift < 3) player.gymLvlLift++;
+                        if (window.player.gymLvlLift < 3) window.player.gymLvlLift++;
                         alert(`Success! Your Max HP increased by +${lvlObj.reward}!`);
                     } else {
                         alert("Level already completed! No extra rewards granted.");
@@ -1780,12 +2184,21 @@
             isCombatActive = true;
             isSparring = true;
             
-            // Set the reward and index so the win condition knows what to give
             currentSparReward = lvlObj.reward;
             currentSparIndex = idx;
             
+            // 1. Setup enemy stats
             setupEnemy(lvlObj.enemy.name, lvlObj.enemy.hp, lvlObj.enemy.dmg, 0, 0);
             
+            // 2. NEW: Update the Enemy Avatar Image
+            const enemyAvatar = document.querySelector('.enemy-avatar');
+            if (enemyAvatar && lvlObj.enemy.img) {
+                enemyAvatar.style.backgroundImage = "url('" + lvlObj.enemy.img + "')";
+                enemyAvatar.style.backgroundSize = "cover";
+                enemyAvatar.style.backgroundPosition = "center";
+                enemyAvatar.style.backgroundColor = "transparent";
+            }
+
             document.getElementById('items-btn').disabled = true;
             document.getElementById('flee-btn').innerText = "Give Up";
             
@@ -1807,7 +2220,7 @@
             Object.keys(schoolData).forEach(field => {
                 const btn = document.createElement('div');
                 btn.className = "menu-item";
-                let status = schoolData[field].finished ? " [GRADUATED]" : (schoolData[field].enrolled ? " [ENROLLED]" : " (100g)");
+                let status = schoolData[field].finished ? " [GRADUATED]" : (schoolData[field].enrolled ? " [ENROLLED]" : " (80g)");
                 btn.innerText = field + status;
                 btn.onclick = () => handleFieldEntry(field);
                 content.appendChild(btn);
@@ -1818,25 +2231,25 @@
             const data = schoolData[field];
             if(!data.enrolled) {
                 // Calculate the cost
-                let cost = 100;
-                const hasDiscount = inventory["Scholarship discount"] > 0;
+                let cost = 80;
+                const hasDiscount = window.player.inventory["Scholarship discount"] > 0;
                 
                 if (hasDiscount) {
                     cost = 20; // 80% off 100g
                 }
 
-                if(player.gold >= cost) {
+                if(window.player.gold >= cost) {
                     const promptMsg = hasDiscount 
                         ? `Scholarship discount applied! Enroll in ${field} for only ${cost}g?` 
                         : `Enroll in ${field} for ${cost}g?`;
 
                     if(confirm(promptMsg)) {
-                        player.gold -= cost;
+                        window.player.gold -= cost;
                         data.enrolled = true;
                         
                         // Consume the item
                         if (hasDiscount) {
-                            inventory["Scholarship discount"] -= 1;
+                            window.player.inventory["Scholarship discount"] -= 1;
                             alert("Scholarship discount used!");
                         }
                         
@@ -1917,8 +2330,8 @@
             if (currentQuizLvl === 2) {
                 if(!field.finished) {
                     field.finished = true;
-                    player.maxMp += 15;
-                    player.mp = player.maxMp;
+                   window.player.schoolMpBonus = (window.player.schoolMpBonus || 0) + 15;
+                    window.player.mp = window.player.maxMp;
                     alert("Congratulations! You graduated from this field. Max MP +15.");
                 } else {
                     alert("Level complete!");
@@ -2025,15 +2438,15 @@ function highlightNPC(btnElement) {
         }
 
         function showQuestDetails(q) {
-            alert(`${q.desc}\n\nReward: ${q.rewardG}g, ${q.rewardE}exp\nProgress: ${(inventory[q.item] || 0)} / ${q.req}`);
+            alert(`${q.desc}\n\nReward: ${q.rewardG}g, ${q.rewardE}exp\nProgress: ${(window.player.inventory[q.item] || 0)} / ${q.req}`);
             if(q.status === "available" || q.status === "completed") {
                 if(confirm("Accept this quest?")) { q.status = "active"; openGrinder(); }
             } else if(q.status === "active") {
-                if((inventory[q.item] || 0) >= q.req) {
-                    if(q.id === "q3") player.gold -= 100;
-                    player.gold += q.rewardG;
+                if((window.player.inventory[q.item] || 0) >= q.req) {
+                    if(q.id === "q3") window.player.gold -= 100;
+                    window.player.gold += q.rewardG;
                     addExp(q.rewardE);
-                    inventory[q.item] -= q.req;
+                    window.player.inventory[q.item] -= q.req;
                     q.status = "completed";
                     if(q.id === "q1" && quests.q2.status === "locked") quests.q2.status = "available";
                     if(q.id === "q2" && quests.q3.status === "locked") quests.q3.status = "available";
@@ -2057,10 +2470,18 @@ function highlightNPC(btnElement) {
                 btn.onclick = () => {
                     if (!isPlayerTurn) return;
 
-                    const ab = player.selectedHero.abilities[num - 1];
+                   // 1. ADD THIS SAFETY CHECK HERE
+                    if (!window.player || !window.player.selectedHero) {
+                        console.warn("Combat buttons clicked, but no hero is selected yet!");
+                        return; // This stops the function from crashing
+                    }
+
+                    const ab = window.player.selectedHero.abilities[num - 1];
+
+                    if (!ab) return; // Safety check in case a hero has fewer than 3 abilities
 
                     // 1. Check for MP requirements
-                    if (player.mp < ab.cost) {
+                    if (window.player.mp < ab.cost) {
                         document.getElementById('combat-log').innerText = "Not enough MP!";
                         return;
                     }
@@ -2086,12 +2507,12 @@ function highlightNPC(btnElement) {
 
         function executeAbility(ab) {
             let actualCost = ab.cost;
-            if(player.freeMPTurns > 0) actualCost = 0;
-            if(player.selectedHero.name === "Rah Jay" || player.selectedHero.name === "Lil Nas") {
-                if(player.mpReduce) actualCost -= 5;
+            if(window.player.freeMPTurns > 0) actualCost = 0;
+            if(window.player.selectedHero.name === "Rah Jay" || window.player.selectedHero.name === "Lil Nas") {
+                if(window.player.mpReduce) actualCost -= 5;
             }
-            if (player.mp < actualCost) { alert("Not enough MP!"); return; }
-            player.mp -= Math.max(0, actualCost);
+            if (window.player.mp < actualCost) { alert("Not enough MP!"); return; }
+            window.player.mp -= Math.max(0, actualCost);
 
             let logMsg = `Used ${ab.name}! `;
             
@@ -2101,7 +2522,7 @@ function highlightNPC(btnElement) {
                 
                 // player.bonusDmg comes from items like the Baston
                 // player.strBuff comes from temporary skills or leveling
-                return baseDmg + (player.bonusDmg || 0) + (player.strBuff || 0);
+                return baseDmg + (window.player.bonusDmg || 0) + (window.player.strBuff || 0);
             };
 
             switch(ab.type) {
@@ -2113,13 +2534,13 @@ function highlightNPC(btnElement) {
                 case "debuff_dmg":
                     let d1 = getDmg(ab.val);
                     enemy.hp -= d1;
-                    player.enemyDmgDebuff = ab.debuff;
-                    player.enemyDebuffTurns = ab.duration; 
+                    window.player.enemyDmgDebuff = ab.debuff;
+                    window.player.enemyDebuffTurns = ab.duration; 
                     logMsg += `Dealt ${d1} dmg and lowered enemy dmg by ${ab.debuff} for ${ab.duration} turns.`;
                     break;
                 case "stun_buff":
                     stunTurns = ab.stun;
-                    player.mpReduce = ab.mpReduce;
+                    window.player.mpReduce = ab.mpReduce;
                     logMsg += `Enemy stunned for ${ab.stun} turns! MP costs reduced.`;
                     break;
                 case "chance_dmg":
@@ -2145,7 +2566,7 @@ function highlightNPC(btnElement) {
                         enemy.hp = 0;
                         logMsg += "DEATH ROLL! Enemy died instantly!";
                     } else {
-                        player.hp = 0;
+                        window.player.hp = 0;
                         logMsg += "DEATH ROLL! You killed yourself!";
                     }
                     break;
@@ -2154,7 +2575,7 @@ function highlightNPC(btnElement) {
                     enemy.hp -= d4;
                     logMsg += `Dealt ${d4} dmg.`;
                     if (Math.random() < ab.stealChance) {
-                        player.gold += ab.gold;
+                        window.player.gold += ab.gold;
                         logMsg += ` Lucky! You stole ${ab.gold}g!`;
                     } else {
                         logMsg += ` Failed to steal any gold.`;
@@ -2163,18 +2584,18 @@ function highlightNPC(btnElement) {
                 case "dmg_bounty":
                     let d5 = getDmg(ab.val);
                     enemy.hp -= d5;
-                    if(enemy.hp <= 0) { player.gold += ab.bonusGold; logMsg += `Killed! Earned +${ab.bonusGold}g bounty!`; }
+                    if(enemy.hp <= 0) { window.player.gold += ab.bonusGold; logMsg += `Killed! Earned +${ab.bonusGold}g bounty!`; }
                     else logMsg += `Dealt ${d5} dmg.`;
                     break;
                 case "dmg_dodge_chance":
                     let d6 = getDmg(ab.val);
                     enemy.hp -= d6;
-                    if(Math.random() < ab.dodgeChance) player.dodgeNext = true;
+                    if(Math.random() < ab.dodgeChance) window.player.dodgeNext = true;
                     logMsg += `Dealt ${d6} dmg. Prep for dodge!`;
                     break;
                 case "free_mp_heal":
-                    player.hp = Math.min(player.maxHp, player.hp + ab.heal);
-                    player.freeMPTurns = ab.duration;
+                    window.player.hp = Math.min(window.player.maxHp, window.player.hp + ab.heal);
+                    window.player.freeMPTurns = ab.duration;
                     logMsg += `Healed ${ab.heal} HP. Abilities cost 0 MP for 2 turns!`;
                     break;
                 case "dmg_extra_chance":
@@ -2189,16 +2610,16 @@ function highlightNPC(btnElement) {
                     logMsg += `Dealt ${totalDmg} dmg.`;
                     break;
                 case "buff_dmg_mp":
-                    player.strBuff += ab.val;
-                    player.mpReduce = ab.mpReduce;
-                    player.strTurns = ab.duration;
+                    window.player.strBuff += ab.val;
+                    window.player.mpReduce = ab.mpReduce;
+                    window.player.strTurns = ab.duration;
                     logMsg += `Buffed strength and lowered MP costs!`;
                     break;
                 case "dmg_debuff":
                     let d7 = getDmg(ab.val);
                     enemy.hp -= d7;
-                    player.enemyDmgDebuff += ab.debuff;
-                    player.enemyDebuffTurns = 1;
+                    window.player.enemyDmgDebuff += ab.debuff;
+                    window.player.enemyDebuffTurns = 1;
                     logMsg += `Dealt ${d7} dmg and lowered enemy power.`;
                     break;
                 case "crit_stun_chance":
@@ -2210,7 +2631,7 @@ function highlightNPC(btnElement) {
                 case "heal_dmg":
                     let h = Math.floor(Math.random() * (ab.heal[1] - ab.heal[0] + 1)) + ab.heal[0];
                     let d9 = getDmg(ab.val);
-                    player.hp = Math.min(player.maxHp, player.hp + h);
+                    window.player.hp = Math.min(window.player.maxHp, window.player.hp + h);
                     enemy.hp -= d9;
                     logMsg += `Back Tracked! Healed ${h} and dealt ${d9} dmg.`;
                     break;
@@ -2223,13 +2644,13 @@ function highlightNPC(btnElement) {
                 case "self_dmg_attack":
                     let d11 = getDmg(ab.val);
                     enemy.hp -= d11;
-                    player.hp -= ab.selfDmg;
+                    window.player.hp -= ab.selfDmg;
                     logMsg += `Bloody Fists! Dealt ${d11} dmg but lost ${ab.selfDmg} HP.`;
                     break;
                 case "lifesteal":
                     let d12 = getDmg(ab.val);
                     enemy.hp -= d12;
-                    player.hp = Math.min(player.maxHp, player.hp + ab.heal);
+                    window.player.hp = Math.min(window.player.maxHp, window.player.hp + ab.heal);
                     logMsg += `Life Steal! Dealt ${d12} and healed ${ab.heal}.`;
                     break;
                 case "dmg_stun":
@@ -2242,17 +2663,17 @@ function highlightNPC(btnElement) {
                     let d14 = getDmg(ab.val);
                     enemy.hp -= d14;
                     // Apply debuff to enemy
-                    player.enemyDmgDebuff += ab.debuff;
-                    player.enemyDebuffTurns = ab.duration; 
+                    window.player.enemyDmgDebuff += ab.debuff;
+                    window.player.enemyDebuffTurns = ab.duration; 
                     // Apply buff to player
-                    player.strBuff += ab.buff;
-                    player.strTurns = ab.duration; // Now uses the 2 turns defined in data
+                    window.player.strBuff += ab.buff;
+                    window.player.strTurns = ab.duration; // Now uses the 2 turns defined in data
                     logMsg += `Tormented! Dealt ${d14} and swapped power for ${ab.duration} turns!`;
                     break;
                 case "block_debuff":
-                    player.dodgeNext = true;
-                    player.enemyDmgDebuff += ab.debuff;
-                    player.enemyDebuffTurns = ab.duration;
+                    window.player.dodgeNext = true;
+                    window.player.enemyDmgDebuff += ab.debuff;
+                    window.player.enemyDebuffTurns = ab.duration;
                     logMsg += "Magic Barrier up! Next attack blocked.";
                     break;
             }
@@ -2261,8 +2682,8 @@ function highlightNPC(btnElement) {
             document.getElementById('combat-log').innerText = logMsg;
             updateEnemyBar();
 
-            if(player.strTurns > 0) { player.strTurns--; if(player.strTurns === 0) player.strBuff = 0; }
-            if(player.freeMPTurns > 0) player.freeMPTurns--;
+            if(window.player.strTurns > 0) { window.player.strTurns--; if(window.player.strTurns === 0) window.player.strBuff = 0; }
+            if(window.player.freeMPTurns > 0) window.player.freeMPTurns--;
 
             updateUI();
             if(enemy.hp <= 0) win();
@@ -2279,8 +2700,8 @@ function highlightNPC(btnElement) {
             }
 
             // 2. Check for Dodge
-            if(player.dodgeNext) {
-                player.dodgeNext = false;
+            if(window.player.dodgeNext) {
+                window.player.dodgeNext = false;
                 document.getElementById('combat-log').innerText = "You dodged the attack!";
                 setTimeout(() => { isPlayerTurn = true; }, 1000);
                 return;
@@ -2288,16 +2709,16 @@ function highlightNPC(btnElement) {
 
             // 3. Enemy Performs Attack
             let baseDmg = Math.floor(Math.random() * (enemy.dmg[1] - enemy.dmg[0] + 1)) + enemy.dmg[0];
-            let actualDmg = Math.max(0, baseDmg - player.enemyDmgDebuff);
-            player.hp = Math.max(0, player.hp - actualDmg);
+            let actualDmg = Math.max(0, baseDmg - window.player.enemyDmgDebuff);
+            window.player.hp = Math.max(0, window.player.hp - actualDmg);
             
             let logMsg = `${enemy.name} attacks for ${actualDmg} dmg!`;
 
             // 4. DEBUFF COUNTDOWN (Insert here)
-            if(player.enemyDebuffTurns > 0) {
-                player.enemyDebuffTurns--;
-                if(player.enemyDebuffTurns === 0) {
-                    player.enemyDmgDebuff = 0; // Reset debuff amount
+            if(window.player.enemyDebuffTurns > 0) {
+                window.player.enemyDebuffTurns--;
+                if(window.player.enemyDebuffTurns === 0) {
+                    window.player.enemyDmgDebuff = 0; // Reset debuff amount
                     logMsg += " The enemy's power has returned!";
                 }
             }
@@ -2306,17 +2727,21 @@ function highlightNPC(btnElement) {
 
             // 5. Wrap up Turn
             updateUI();
-            if(player.hp <= 0) lose();
+            if(window.player.hp <= 0) lose();
             else isPlayerTurn = true;
         }
 
         function startFight() {
+            document.getElementById('exploration-view').style.display = 'none';
+            document.getElementById('combat-view').style.display = 'flex';
+            updateUI();
+
             closeSubMenu();
             isCombatActive = true; 
             isPlayerTurn = true; 
             stunTurns = 0;
-            player.enemyDmgDebuff = 0; 
-            player.dodgeNext = false;
+            window.player.enemyDmgDebuff = 0; 
+            window.player.dodgeNext = false;
             
             let roll = Math.random() * 100;
             
@@ -2347,9 +2772,28 @@ function highlightNPC(btnElement) {
             document.getElementById('combat-nav').style.display = 'flex';
         }
 
-        function setupEnemy(name, hp, dmg, gold, exp) {
+        function setupEnemy(name, hp, dmg, gold, exp, imgPath) {
+            // 1. Update the enemy object data
             enemy = { name, hp, maxHp: hp, dmg, gold, exp };
+            
+            // 2. Update the Text UI
             document.getElementById('enemy-name-ui').innerText = name.toUpperCase();
+
+            // 3. Update the Image UI
+            const enemyAvatar = document.querySelector('.enemy-avatar');
+            if (enemyAvatar) {
+                if (imgPath) {
+                    enemyAvatar.style.backgroundImage = "url('" + imgPath + "')";
+                    enemyAvatar.style.backgroundSize = "cover";
+                    enemyAvatar.style.backgroundPosition = "center";
+                    enemyAvatar.style.backgroundColor = "transparent";
+                } else {
+                    // Fallback if no image is provided (so it's not just a floating previous enemy)
+                    enemyAvatar.style.backgroundImage = "none";
+                    enemyAvatar.style.backgroundColor = "#444"; 
+                }
+            }
+
             updateEnemyBar();
         }
 
@@ -2357,9 +2801,9 @@ function highlightNPC(btnElement) {
             if (isSparring) {
                 const lvlObj = gymData.sparring[currentSparIndex];
                 if (!lvlObj.done) {
-                player.gymDmgBonus += currentSparReward; // Save damage persistently
+                window.player.gymDmgBonus += currentSparReward; // Save damage persistently
                 lvlObj.done = true;
-                if (player.gymLvlSpar < 3) player.gymLvlSpar++;
+                if (window.player.gymLvlSpar < 3) window.player.gymLvlSpar++;
                 alert(`Sparring Victory! Damage permanently increased by +${currentSparReward}`);
             } else {
                     alert("Sparring Victory!");
@@ -2373,16 +2817,16 @@ function highlightNPC(btnElement) {
                 let eGain = enemy.exp;
 
                 // --- EMMEL BONUS LOGIC ---
-                if (player.equippedAccessory === "Emmel") {
+                if (window.player.equippedAccessory === "Emmel") {
                     eGain += 10; 
                 }
                 // -------------------------
 
-                if (quests.q1.status === "active") inventory["Rags"] = (inventory["Rags"] || 0) + 1;
-                if (quests.q3.status === "active") inventory["Peasant Gold"] = (inventory["Peasant Gold"] || 0) + gGain;
-                else player.gold += gGain;
+                if (quests.q1.status === "active") window.player.inventory["Rags"] = (window.player.inventory["Rags"] || 0) + 1;
+                if (quests.q3.status === "active") window.player.inventory["Peasant Gold"] = (window.player.inventory["Peasant Gold"] || 0) + gGain;
+                else window.player.gold += gGain;
 
-                alert(`Victory! +${gGain}g and +${eGain}exp ${player.equippedAccessory === "Emmel" ? "(+10 from Emmel)" : ""}`);
+                alert(`Victory! +${gGain}g and +${eGain}exp ${window.player.equippedAccessory === "Emmel" ? "(+10 from Emmel)" : ""}`);
                 addExp(eGain);
             }
             endFight();
@@ -2395,16 +2839,16 @@ function highlightNPC(btnElement) {
                 endFight(); 
             } else {
                 alert(`Defeated! You were sent Home and lost 10g.`); 
-                player.gold = Math.max(0, player.gold - 10); 
-                player.hp = player.maxHp; 
-                player.mp = player.maxMp; 
+                window.player.gold = Math.max(0, window.player.gold - 10); 
+                window.player.hp = window.player.maxHp; 
+                window.player.mp = window.player.maxMp; 
                 endFight(); // Normal lose function that goes Home
             }
         }
         
         function endFight() {
             isCombatActive = false; isPlayerTurn = true; stunTurns = 0; isSparring = false;
-            player.enemyDmgDebuff = 0; player.mpReduce = 0; player.freeMPTurns = 0;
+            window.player.enemyDmgDebuff = 0; window.player.mpReduce = 0; window.player.freeMPTurns = 0;
             document.getElementById('items-btn').disabled = false;
             document.getElementById('flee-btn').innerText = "Flee";
             document.getElementById('exploration-view').style.display = 'block';
@@ -2425,15 +2869,16 @@ function highlightNPC(btnElement) {
             const content = document.getElementById('menu-content');
             content.innerHTML = "";
             document.getElementById('rest-btn').style.display = "none";
+            document.getElementById('menu-confirm-btn').style.display = "none";
 
-            Object.keys(inventory).forEach(name => {
-                if(inventory[name] > 0) {
+            Object.keys(window.player.inventory).forEach(name => {
+                if(window.player.inventory[name] > 0) {
                     const btn = document.createElement('div');
                     btn.className = "menu-item"; 
                     
                     // Logic for Display Name
-                    let displayName = (player.equippedAccessory === name) ? `[E] ${name}` : name;
-                    btn.innerText = `${displayName} (x${inventory[name]})`;
+                    let displayName = (window.player.equippedAccessory === name) ? `[E] ${name}` : name;
+                    btn.innerText = `${displayName} (x${window.player.inventory[name]})`;
 
                     btn.onclick = () => {
                         // --- 1. PASSIVE STAT ITEMS (Rubik's Cube) ---
@@ -2452,17 +2897,17 @@ function highlightNPC(btnElement) {
                         // --- 2. EMMEL EQUIPMENT LOGIC ---
                         if (name === "Emmel") {
                             const description = "Item Description: Increases Exp rewards from enemies by +10.";
-                            const isEquipped = (player.equippedAccessory === "Emmel");
+                            const isEquipped = (window.player.equippedAccessory === "Emmel");
 
                             if (!isEquipped) {
                                 if (confirm(`${description}\n\nDo you want to equip this item?`)) {
-                                    player.equippedAccessory = "Emmel";
+                                    window.player.equippedAccessory = "Emmel";
                                     alert("Emmel equipped!");
                                     openItems(); 
                                 }
                             } else {
                                 if (confirm(`${description}\n\nThis item is currently equipped. Do you want to unequip it?`)) {
-                                    player.equippedAccessory = null;
+                                    window.player.equippedAccessory = null;
                                     alert("Emmel unequipped.");
                                     openItems(); 
                                 }
@@ -2495,11 +2940,11 @@ function highlightNPC(btnElement) {
         }
 
         function useItem(name) {
-            inventory[name]--;
-            if(name === "HP Potion") player.hp = Math.min(player.maxHp, player.hp + 100);
-            if(name === "MP Potion") player.mp = Math.min(player.maxMp, player.mp + 100);
-            if(name === "Strength Potion") { player.strBuff = 15; player.strTurns = 2; }
-            if(quests.q2.status === "active") inventory["Empty Potion Bottle"] = (inventory["Empty Potion Bottle"] || 0) + 1;
+            window.player.inventory[name]--;
+            if(name === "HP Potion") window.player.hp = Math.min(window.player.maxHp, window.player.hp + 100);
+            if(name === "MP Potion") window.player.mp = Math.min(window.player.maxMp, window.player.mp + 100);
+            if(name === "Strength Potion") { window.player.strBuff = 15; window.player.strTurns = 2; }
+            if(quests.q2.status === "active") window.player.inventory["Empty Potion Bottle"] = (window.player.inventory["Empty Potion Bottle"] || 0) + 1;
             updateUI(); closeSubMenu();
             if(isCombatActive) { isPlayerTurn = false; setTimeout(enemyTurn, 1000); }
         }
@@ -2537,7 +2982,7 @@ function highlightNPC(btnElement) {
                 const btn = document.createElement('div');
                 btn.className = "menu-item"; 
                 
-                const isOwned = inventory[g.name] > 0;
+                const isOwned = window.player.inventory[g.name] > 0;
                 if (g.isUnique && isOwned) {
                     btn.innerText = `${g.name} - SOLD OUT`;
                     btn.style.opacity = "0.5";
@@ -2566,9 +3011,9 @@ function highlightNPC(btnElement) {
                     confirmBtn.innerText = `BUY ${g.name.toUpperCase()}`;
                     
                     confirmBtn.onclick = () => {
-                        if (player.gold >= selectedShopItem.cost) {
-                            player.gold -= selectedShopItem.cost;
-                            inventory[selectedShopItem.name] = (inventory[selectedShopItem.name] || 0) + 1;
+                        if (window.player.gold >= selectedShopItem.cost) {
+                            window.player.gold -= selectedShopItem.cost;
+                            window.player.inventory[selectedShopItem.name] = (window.player.inventory[selectedShopItem.name] || 0) + 1;
 
                             alert(`Purchased ${selectedShopItem.name}!`);
                             
@@ -2589,8 +3034,8 @@ function highlightNPC(btnElement) {
         sellHeader.style.marginTop = "20px";
         content.appendChild(sellHeader);
 
-        Object.keys(inventory).forEach(itemName => {
-        if (inventory[itemName] > 0) {
+        Object.keys(window.player.inventory).forEach(itemName => {
+        if (window.player.inventory[itemName] > 0) {
             const btn = document.createElement('div');
             btn.className = "menu-item";
 
@@ -2602,7 +3047,7 @@ function highlightNPC(btnElement) {
                 // Determine price based on our previous list or default to 2g
                 const price = sellPrices[itemName] ?? 2;
                 
-                btn.innerText = `${itemName} (x${inventory[itemName]}) - Sell for ${price}g`;
+                btn.innerText = `${itemName} (x${window.player.inventory[itemName]}) - Sell for ${price}g`;
                 btn.onclick = () => openSellPrompt(itemName, price);
             }
             content.appendChild(btn);
@@ -2611,7 +3056,7 @@ function highlightNPC(btnElement) {
     }
 
     function openSellPrompt(itemName, pricePerItem) {
-        const maxAmount = inventory[itemName];
+        const maxAmount = window.player.inventory[itemName];
         let amount = prompt(`How many ${itemName} do you want to sell? (1 - ${maxAmount})`, "1");
         
         amount = parseInt(amount);
@@ -2625,8 +3070,8 @@ function highlightNPC(btnElement) {
         const totalReward = amount * pricePerItem;
 
         if (confirm(`Sell ${amount}x ${itemName} for ${totalReward} Gold?`)) {
-            inventory[itemName] -= amount;
-            player.gold += totalReward;
+            window.player.inventory[itemName] -= amount;
+            window.player.gold += totalReward;
             alert(`You earned ${totalReward} Gold!`);
             updateUI();
             openShop(); // Refresh the shop to update the counts displayed
@@ -2666,7 +3111,7 @@ function highlightNPC(btnElement) {
                     return;
                 }
 
-                inventory[itemName] = (inventory[itemName] || 0) + amount;
+                window.player.inventory[itemName] = (window.player.inventory[itemName] || 0) + amount;
                 alert(`Successfully added ${amount}x ${itemName} to inventory.`);
                 updateUI();
             }
@@ -2772,12 +3217,12 @@ function highlightNPC(btnElement) {
             }
 
             // Update the player's gold variable
-            player.gold += amount; 
+            window.player.gold += amount; 
             
             // Refresh the UI so the new gold total appears on screen
             updateUI(); 
             
-            alert(`Added ${amount} gold. Total gold: ${player.gold}`);
+            alert(`Added ${amount} gold. Total gold: ${window.player.gold}`);
         }
         else if (processedCommand === "popcorn" || processedCommand === "!popcorn") {
             alert("!getItem itemName\n!getXp amount\n!getGold amount\n!getSecret\npopcorn");
@@ -2787,9 +3232,9 @@ function highlightNPC(btnElement) {
             }
         }
 
-        function claimGold() { player.gold += 10; updateUI(); }
+        function claimGold() { window.player.gold += 10; updateUI(); }
         function claimExp() { addExp(50); }
-        function restAtHome() { player.hp = player.maxHp; player.mp = player.maxMp; updateUI(); alert("HP and MP Restored!"); }
+        function restAtHome() { window.player.hp = window.player.maxHp; window.player.mp = window.player.maxMp; updateUI(); alert("HP and MP Restored!"); }
         function closeSubMenu() { document.getElementById('sub-menu').style.display = 'none'; clearInterval(liftInterval); }
         function closePopup() { document.getElementById('popup').style.display = 'none'; }
         function flee() {
@@ -2811,7 +3256,7 @@ function highlightNPC(btnElement) {
                 let damage = Math.floor(Math.random() * (enemy.dmg[1] - enemy.dmg[0] + 1)) + enemy.dmg[0];
                 
                 // Apply damage to player
-                player.hp -= damage;
+                window.player.hp -= damage;
                 
                 // Log the failure
                 const log = document.getElementById('combat-log');
@@ -2823,7 +3268,7 @@ function highlightNPC(btnElement) {
                 updateUI();
                 
                 // 3. Check for death
-                if (player.hp <= 0) {
+                if (window.player.hp <= 0) {
                     alert("You were struck down while trying to run...");
                     
                     // FIX: Instead of reloading the whole game, call your respawn logic
@@ -2832,7 +3277,7 @@ function highlightNPC(btnElement) {
                         handlePlayerDeath(); 
                     } else {
                         // Manual fallback if you haven't made a function yet:
-                        player.hp = player.maxHp; 
+                        window.player.hp = window.player.maxHp; 
                         updateUI();
                         endFight(); // Exit the combat screen
                     }
@@ -2903,8 +3348,8 @@ function highlightNPC(btnElement) {
             
             // 3. Initialize the UI with player data
             // Ensure 'player' object exists before accessing .name
-            if (window.player && player.name) {
-                document.getElementById('ui-name').innerText = player.name;
+            if (window.player && window.player.name) {
+                document.getElementById('ui-name').innerText = window.player.name;
             }
             
             const locationText = document.getElementById('location-text');
@@ -2915,6 +3360,7 @@ function highlightNPC(btnElement) {
                 updateUI();
             }
         }
+        
     </script>
 </body>
 </html>
